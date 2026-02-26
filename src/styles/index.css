@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+}
+
+/* Custom utilities */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Custom components */
+@layer components {
+  .btn-primary {
+    @apply px-5 py-2 rounded-full font-medium transition-opacity hover:opacity-90;
+    background-color: #2C2C2C;
+    color: #FFFFFF;
+  }
+
+  .btn-secondary {
+    @apply px-5 py-2 rounded-full font-medium transition-opacity hover:opacity-90;
+    background-color: #FFFFFF;
+    color: #2C2C2C;
+    border: 1px solid #2C2C2C;
+  }
+
+  .card {
+    @apply p-6 shadow-sm rounded-2xl;
+    background-color: #FFFFFF;
+    border: 1px solid #D7D6D3;
+  }
+
+  .input-field {
+    @apply w-full rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-accent;
+    border: 1px solid #D7D6D3;
+    background-color: #FFFFFF;
+  }
+}
+
+/* Range input styling */
+input[type='range'] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: #D7D6D3;
+  outline: none;
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #4AFFC3;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+input[type='range']::-webkit-slider-thumb:hover {
+  background: #3de0a9;
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #4AFFC3;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s;
+}
+
+input[type='range']::-moz-range-thumb:hover {
+  background: #3de0a9;
+}
+
+/* Animation for loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Drag and drop cursor */
+[draggable='true'] {
+  cursor: grab;
+}
+
+[draggable='true']:active {
+  cursor: grabbing;
+}
+
+/* Focus visible for accessibility */
+:focus-visible {
+  outline: 2px solid #4AFFC3;
+  outline-offset: 2px;
+}
