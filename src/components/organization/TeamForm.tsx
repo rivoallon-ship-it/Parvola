@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Team, NewTeamForm, Establishment } from '@/types';
 import { Button, Input, TextArea, Select } from '@/components/common';
 
@@ -25,6 +26,7 @@ export const TeamForm: React.FC<TeamFormProps> = ({
   onDelete,
   isEditing = false,
 }) => {
+  const { t } = useTranslation();
   const [form, setForm] = useState<NewTeamForm>({
     establishmentId: team?.establishmentId || defaultEstablishmentId || '',
     name: team?.name || '',
@@ -50,37 +52,37 @@ export const TeamForm: React.FC<TeamFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Select
-        label="Établissement"
+        label={t('organization.establishment')}
         value={form.establishmentId}
         onChange={(e) => setForm({ ...form, establishmentId: e.target.value })}
         options={establishmentOptions}
-        placeholder="Sélectionner un établissement"
+        placeholder={t('organization.selectEstablishment')}
         required
       />
       <Input
-        label="Nom de l'équipe"
+        label={t('organization.teamName')}
         value={form.name}
         onChange={(e) => setForm({ ...form, name: e.target.value })}
-        placeholder="Ex: Équipe commerciale, Support technique..."
+        placeholder={t('organization.teamPlaceholder')}
         required
       />
       <TextArea
-        label="Description (optionnel)"
+        label={t('organization.descriptionOptional')}
         value={form.description}
         onChange={(e) => setForm({ ...form, description: e.target.value })}
-        placeholder="Description de l'équipe..."
+        placeholder={t('organization.teamDescPlaceholder')}
         rows={3}
       />
       <div className="flex gap-2 pt-2">
         <Button type="submit" variant="primary">
-          {isEditing ? 'Enregistrer' : 'Créer'}
+          {isEditing ? t('common.save') : t('common.create')}
         </Button>
         <Button type="button" variant="secondary" onClick={onCancel}>
-          Annuler
+          {t('common.cancel')}
         </Button>
         {isEditing && onDelete && (
           <Button type="button" variant="danger" onClick={onDelete} className="ml-auto">
-            Supprimer
+            {t('common.delete')}
           </Button>
         )}
       </div>

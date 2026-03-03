@@ -2,6 +2,7 @@ import * as XLSX from 'xlsx';
 import type { Employee, Semester, Objective } from '@/types';
 import { getRandomEmoji, getStatusLabel } from '@/utils/helpers';
 import { generateId } from '@/utils/helpers';
+import i18n from '@/i18n';
 
 // ============================================
 // Service d'import/export Excel
@@ -70,6 +71,8 @@ export interface ExportData {
   bilanEmployee?: string;
 }
 
+const t = (key: string) => i18n.t(key);
+
 export const generateExportHTML = (data: ExportData): string => {
   const { employee, semester, objectives, bilanManager, bilanEmployee } = data;
 
@@ -79,18 +82,18 @@ export const generateExportHTML = (data: ExportData): string => {
     <div class="objective">
       <div class="objective-header">
         <span class="objective-number">${index + 1}.</span>
-        <h3>${obj.title || 'Sans titre'}</h3>
+        <h3>${obj.title || t('common.noTitle')}</h3>
         <span class="status ${obj.status}">${getStatusLabel(obj.status)}</span>
       </div>
       ${obj.description ? `<p class="description">${obj.description}</p>` : ''}
       <div class="progress-section">
-        <span>Progression: ${obj.progress}%</span>
+        <span>${t('excel.progression')} ${obj.progress}%</span>
         <div class="progress-bar">
           <div class="progress-fill" style="width: ${obj.progress}%"></div>
         </div>
       </div>
-      ${obj.deadline ? `<p class="deadline">Échéance: ${obj.deadline}</p>` : ''}
-      ${obj.comments ? `<p class="comments">Commentaires: ${obj.comments}</p>` : ''}
+      ${obj.deadline ? `<p class="deadline">${t('excel.deadline')} ${obj.deadline}</p>` : ''}
+      ${obj.comments ? `<p class="comments">${t('excel.comments')} ${obj.comments}</p>` : ''}
     </div>
   `
     )
@@ -98,16 +101,16 @@ export const generateExportHTML = (data: ExportData): string => {
 
   const bilanHTML = (bilanManager || bilanEmployee) ? `
     <div class="bilan-section">
-      <h2>Bilan</h2>
+      <h2>${t('excel.bilan')}</h2>
       ${bilanManager ? `
         <div class="bilan-block">
-          <h4>Commentaire Manager</h4>
+          <h4>${t('excel.managerComment')}</h4>
           <p>${bilanManager}</p>
         </div>
       ` : ''}
       ${bilanEmployee ? `
         <div class="bilan-block">
-          <h4>Commentaire Employé</h4>
+          <h4>${t('excel.employeeComment')}</h4>
           <p>${bilanEmployee}</p>
         </div>
       ` : ''}
@@ -117,24 +120,26 @@ export const generateExportHTML = (data: ExportData): string => {
   const signaturesHTML = `
     <div class="signatures-section">
       <div class="signature-block">
-        <h4>Signature Employé</h4>
+        <h4>${t('excel.employeeSignature')}</h4>
         <div class="signature-line"></div>
-        <p class="signature-date">Date: ____________________</p>
+        <p class="signature-date">${t('excel.date')}</p>
       </div>
       <div class="signature-block">
-        <h4>Signature Manager</h4>
+        <h4>${t('excel.managerSignature')}</h4>
         <div class="signature-line"></div>
-        <p class="signature-date">Date: ____________________</p>
+        <p class="signature-date">${t('excel.date')}</p>
       </div>
     </div>
   `;
+
+  const locale = i18n.language || 'fr';
 
   return `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Évaluation - ${employee.name} - ${semester.name}</title>
+      <title>${t('excel.evaluation')} - ${employee.name} - ${semester.name}</title>
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
@@ -290,18 +295,18 @@ export const generateExportHTML = (data: ExportData): string => {
             <p class="subtitle">${employee.position}</p>
           </div>
         </div>
-        <p class="subtitle">Évaluation ${semester.name}</p>
+        <p class="subtitle">${t('excel.evaluation')} ${semester.name}</p>
       </div>
 
-      <h2>Objectifs (${objectives.length})</h2>
-      ${objectivesHTML || '<p>Aucun objectif défini.</p>'}
+      <h2>${t('excel.objectives')} (${objectives.length})</h2>
+      ${objectivesHTML || `<p>${t('excel.noObjectives')}</p>`}
 
       ${bilanHTML}
 
       ${signaturesHTML}
 
       <footer style="margin-top: 40px; text-align: center; color: #999; font-size: 12px;">
-        Généré par Talent Review - ${new Date().toLocaleDateString('fr-FR')}
+        ${t('excel.generatedBy')} - ${new Date().toLocaleDateString(locale)}
       </footer>
     </body>
     </html>

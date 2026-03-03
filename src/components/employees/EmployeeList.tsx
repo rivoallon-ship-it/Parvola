@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Plus, Search, FileSpreadsheet, Users, Building2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Employee, NewEmployeeForm, Establishment, Team, NewEstablishmentForm, NewTeamForm } from '@/types';
 import { Button, Input, EmptyState, Modal, Select } from '@/components/common';
 import { PageHeader } from '@/components/layout';
@@ -7,7 +8,8 @@ import { EmployeeCard } from './EmployeeCard';
 import { EmployeeForm } from './EmployeeForm';
 import { EstablishmentCard, EstablishmentForm, TeamForm } from '@/components/organization';
 import { parseEmployeesFromExcel, convertToEmployees } from '@/services/excel';
-import { useApp, useConfirmDialog } from '@/hooks';
+import { useNavigation, useEmployees, useOrganization, useTemplates, useUser, useConfirmDialog } from '@/hooks';
+import { canEditEmployees, getEmployeesInScope } from '@/utils/permissions';
 import { ConfirmDialog } from '@/components/common';
 
 // ============================================
@@ -15,26 +17,15 @@ import { ConfirmDialog } from '@/components/common';
 // ============================================
 
 export const EmployeeList: React.FC = () => {
-  const {
-    employees,
-    establishments,
-    teams,
-    positions,
-    searchTerm,
-    setSearchTerm,
-    addEmployee,
-    updateEmployee,
-    deleteEmployee,
-    importEmployees,
-    addEstablishment,
-    updateEstablishment,
-    deleteEstablishment,
-    addTeam,
-    updateTeam,
-    deleteTeam,
-    setSelectedEmployee,
-    setCurrentView,
-  } = useApp();
+  const { t } = useTranslation();
+  const { searchTerm, setSearchTerm, setSelectedEmployee, setCurrentView } = useNavigation();
+  const { employees: allEmployees, addEmployee, updateEmployee, deleteEmployee, importEmployees } = useEmployees();
+  const { establishments, teams, addEstablishment, updateEstablishment, deleteEstablishment, addTeam, updateTeam, deleteTeam } = useOrganization();
+  const { positions } = useTemplates();
+  const { currentUser } = useUser();
+
+  const canEdit = canEditEmployees(currentUser.role);
+  const employees = getEmployeesInScope(currentUser, allEmployees, teams);
 
   const [showAddEmployeeForm, setShowAddEmployeeForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
@@ -122,7 +113,7 @@ export const EmployeeList: React.FC = () => {
     if (!file) return;
 
     if (establishments.length === 0) {
-      alert("Veuillez d'abord créer un établissement avant d'importer des employés.");
+      alert(t('employees.createEstablishmentFirst'));
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -146,13 +137,13 @@ export const EmployeeList: React.FC = () => {
       if (imported.length > 0) {
         const newEmployees = convertToEmployees(imported);
         await importEmployees(newEmployees, importEstablishmentId);
-        alert(`${imported.length} employé(s) importé(s) avec succès !`);
+        alert(t('employees.importSuccess', { count: imported.length }));
       } else {
-        alert('Aucun employé trouvé dans le fichier.');
+        alert(t('employees.noEmployeesInFile'));
       }
     } catch (error) {
-      console.error('Erreur import:', error);
-      alert("Erreur lors de l'import du fichier Excel.");
+      console.error('Import error:', error);
+      alert(t('employees.importError'));
     }
 
     setShowImportModal(false);
@@ -183,7 +174,7 @@ export const EmployeeList: React.FC = () => {
   };
 
   const handleDeleteEmployee = (id: string) => {
-    confirm('Supprimer cet employé et toutes ses évaluations ?', async () => {
+    confirm(t('employees.deleteConfirm'), async () => {
       await deleteEmployee(id);
       setEditingEmployee(null);
       close();
@@ -220,7 +211,7 @@ export const EmployeeList: React.FC = () => {
 
   const handleDeleteEstablishment = (id: string) => {
     confirm(
-      'Supprimer cet établissement ? Toutes les équipes et les liens avec les employés seront supprimés.',
+      t('organization.deleteEstablishmentConfirm'),
       async () => {
         await deleteEstablishment(id);
         setEditingEstablishment(null);
@@ -248,7 +239,7 @@ export const EmployeeList: React.FC = () => {
 
   const handleDeleteTeam = (id: string) => {
     confirm(
-      'Supprimer cette équipe ? Les employés seront désassignés de cette équipe.',
+      t('organization.deleteTeamConfirm'),
       async () => {
         await deleteTeam(id);
         setEditingTeam(null);
@@ -266,46 +257,55 @@ export const EmployeeList: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Équipe"
+        title={t('employees.title')}
         action={
-          <div className="flex gap-3 items-center flex-wrap">
-            <Button
-              variant="secondary"
-              icon={<Building2 size={20} />}
-              onClick={() => setShowEstablishmentModal(true)}
-            >
-              Nouvel Établissement
-            </Button>
-            <Button
-              variant="secondary"
-              icon={<FileSpreadsheet size={20} />}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Importer depuis Excel
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileSelect}
-              style={{ display: 'none' }}
-            />
-            <Button
-              variant="primary"
-              icon={<Plus size={20} />}
-              onClick={() => setShowAddEmployeeForm(true)}
-            >
-              Nouvel Employé
-            </Button>
-          </div>
+          canEdit ? (
+            <div className="flex gap-3 items-center flex-wrap">
+              <Button
+                variant="secondary"
+                icon={<Building2 size={20} />}
+                onClick={() => setShowEstablishmentModal(true)}
+              >
+                {t('employees.newEstablishment')}
+              </Button>
+              <Button
+                variant="secondary"
+                icon={<FileSpreadsheet size={20} />}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {t('employees.importFromExcel')}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+              />
+              <Button
+                variant="primary"
+                icon={<Plus size={20} />}
+                onClick={() => setShowAddEmployeeForm(true)}
+              >
+                {t('employees.new')}
+              </Button>
+            </div>
+          ) : undefined
         }
       />
+
+      {/* Read-only notice for managers */}
+      {!canEdit && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-blue-50 border-blue-200">
+          <span className="text-sm font-medium text-blue-700">{t('manager.readOnlyTeam')}</span>
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative">
         <Input
           type="text"
-          placeholder="Rechercher..."
+          placeholder={t('common.search')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           icon={<Search size={20} />}
@@ -313,7 +313,7 @@ export const EmployeeList: React.FC = () => {
       </div>
 
       {/* Add Employee Form */}
-      {showAddEmployeeForm && (
+      {showAddEmployeeForm && canEdit && (
         <EmployeeForm
           teams={teams}
           establishments={establishments}
@@ -340,19 +340,19 @@ export const EmployeeList: React.FC = () => {
       {/* Establishments hierarchy */}
       {filteredEstablishments.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-700">Organisation</h2>
+          <h2 className="text-lg font-semibold text-gray-700">{t('employees.organization')}</h2>
           {filteredEstablishments.map((establishment) => (
             <EstablishmentCard
               key={establishment.id}
               establishment={establishment}
               teams={filteredTeams}
               employees={filteredEmployees}
-              onEdit={() => setEditingEstablishment(establishment)}
-              onAddTeam={() => handleOpenAddTeamModal(establishment.id)}
-              onEditTeam={(team) => setEditingTeam(team)}
-              onEditEmployee={handleEditEmployee}
+              onEdit={canEdit ? () => setEditingEstablishment(establishment) : undefined}
+              onAddTeam={canEdit ? () => handleOpenAddTeamModal(establishment.id) : undefined}
+              onEditTeam={canEdit ? (team) => setEditingTeam(team) : undefined}
+              onEditEmployee={canEdit ? handleEditEmployee : undefined}
               onViewEmployeeEvaluations={handleViewEvaluations}
-              onDropEmployee={handleDropEmployee}
+              onDropEmployee={canEdit ? handleDropEmployee : undefined}
             />
           ))}
         </div>
@@ -362,19 +362,19 @@ export const EmployeeList: React.FC = () => {
       {unassignedEmployees.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-700">
-            Employés non assignés ({unassignedEmployees.length})
+            {t('employees.unassigned')} ({unassignedEmployees.length})
           </h2>
           <p className="text-sm text-gray-500">
-            Glissez-déposez ces employés vers un établissement ou une équipe
+            {t('employees.dragHint')}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {unassignedEmployees.map((emp) => (
               <EmployeeCard
                 key={emp.id}
                 employee={emp}
-                onEdit={() => handleEditEmployee(emp)}
+                onEdit={canEdit ? () => handleEditEmployee(emp) : undefined}
                 onViewEvaluations={() => handleViewEvaluations(emp)}
-                draggable
+                draggable={canEdit}
               />
             ))}
           </div>
@@ -387,7 +387,7 @@ export const EmployeeList: React.FC = () => {
         !showAddEmployeeForm && (
           <EmptyState
             icon={Users}
-            message="Aucun employé ou établissement trouvé. Commencez par créer un établissement et des équipes."
+            message={t('employees.emptyState')}
           />
         )}
 
@@ -395,15 +395,15 @@ export const EmployeeList: React.FC = () => {
       <Modal
         isOpen={showImportModal}
         onClose={handleCancelImport}
-        title="Importer des employés"
+        title={t('employees.importTitle')}
       >
         <div className="space-y-4">
           <p className="text-gray-600">
-            Sélectionnez l'établissement dans lequel importer les employés du fichier{' '}
+            {t('employees.importDescription')}{' '}
             <strong>{pendingImportFile?.name}</strong>
           </p>
           <Select
-            label="Établissement de destination"
+            label={t('employees.importDestination')}
             value={importEstablishmentId}
             onChange={(e) => setImportEstablishmentId(e.target.value)}
             options={establishmentOptions}
@@ -411,10 +411,10 @@ export const EmployeeList: React.FC = () => {
           />
           <div className="flex gap-2 pt-2">
             <Button variant="primary" onClick={handleConfirmImport}>
-              Importer
+              {t('common.import')}
             </Button>
             <Button variant="secondary" onClick={handleCancelImport}>
-              Annuler
+              {t('common.cancel')}
             </Button>
           </div>
         </div>
@@ -424,7 +424,7 @@ export const EmployeeList: React.FC = () => {
       <Modal
         isOpen={showEstablishmentModal}
         onClose={() => setShowEstablishmentModal(false)}
-        title="Nouvel établissement"
+        title={t('organization.newEstablishment')}
       >
         <EstablishmentForm
           onSubmit={handleAddEstablishment as (data: NewEstablishmentForm | Establishment) => void}
@@ -436,7 +436,7 @@ export const EmployeeList: React.FC = () => {
       <Modal
         isOpen={!!editingEstablishment}
         onClose={() => setEditingEstablishment(null)}
-        title="Modifier l'établissement"
+        title={t('organization.editEstablishment')}
       >
         {editingEstablishment && (
           <EstablishmentForm
@@ -456,7 +456,7 @@ export const EmployeeList: React.FC = () => {
           setShowTeamModal(false);
           setDefaultEstablishmentIdForTeam('');
         }}
-        title="Nouvelle équipe"
+        title={t('organization.newTeam')}
       >
         <TeamForm
           establishments={establishments}
@@ -473,7 +473,7 @@ export const EmployeeList: React.FC = () => {
       <Modal
         isOpen={!!editingTeam}
         onClose={() => setEditingTeam(null)}
-        title="Modifier l'équipe"
+        title={t('organization.editTeam')}
       >
         {editingTeam && (
           <TeamForm

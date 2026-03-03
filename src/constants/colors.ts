@@ -32,7 +32,7 @@ export const colors = {
     secondary: '#FFFFFF',
   },
 
-  // Status colors
+  // Status colors (objectives)
   status: {
     notStarted: {
       bg: 'bg-gray-100',
@@ -50,6 +50,21 @@ export const colors = {
       bg: 'bg-red-100',
       text: 'text-red-700',
     },
+  },
+
+  // Campaign status colors
+  campaign: {
+    draft: { bg: 'bg-amber-100', text: 'text-amber-700' },
+    active: { bg: 'bg-blue-100', text: 'text-blue-700' },
+    closed: { bg: 'bg-gray-200', text: 'text-gray-600' },
+  },
+
+  // Evaluation workflow status colors
+  evaluationStatus: {
+    not_started: { bg: 'bg-gray-100', text: 'text-gray-600' },
+    in_progress: { bg: 'bg-blue-100', text: 'text-blue-700' },
+    submitted: { bg: 'bg-amber-100', text: 'text-amber-700' },
+    validated: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
   },
 
   // Semantic colors

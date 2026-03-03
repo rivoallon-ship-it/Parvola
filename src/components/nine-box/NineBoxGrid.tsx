@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Employee, NineBoxRating, Evaluation } from '@/types';
 import { NINE_BOX_CONFIG } from '@/constants/config';
 import { colors } from '@/constants/colors';
@@ -19,6 +20,8 @@ export const NineBoxGrid: React.FC<NineBoxGridProps> = ({
   onDrop,
   onEmployeeClick,
 }) => {
+  const { t } = useTranslation();
+
   const getEmployeesInCell = (performance: NineBoxRating, potential: NineBoxRating): Employee[] => {
     return employees.filter((emp) => {
       const evaluation = evaluations.find(
@@ -47,7 +50,7 @@ export const NineBoxGrid: React.FC<NineBoxGridProps> = ({
             color: colors.btn.primary,
           }}
         >
-          Potentiel
+          {t('nineBox.potential')}
         </span>
       </div>
 
@@ -58,7 +61,7 @@ export const NineBoxGrid: React.FC<NineBoxGridProps> = ({
             {/* Y-axis tick label */}
             <div className="flex items-center justify-end shrink-0" style={{ width: 52 }}>
               <span className="text-[11px] font-medium text-gray-500">
-                {NINE_BOX_CONFIG.potentialLabels[potential - 1]}
+                {t(NINE_BOX_CONFIG.potentialLabelKeys[potential - 1])}
               </span>
             </div>
 
@@ -85,7 +88,7 @@ export const NineBoxGrid: React.FC<NineBoxGridProps> = ({
             {performanceLevels.map((level) => (
               <div key={level} className="text-center">
                 <span className="text-[11px] font-medium text-gray-500">
-                  {NINE_BOX_CONFIG.performanceLabels[level - 1]}
+                  {t(NINE_BOX_CONFIG.performanceLabelKeys[level - 1])}
                 </span>
               </div>
             ))}
@@ -100,7 +103,7 @@ export const NineBoxGrid: React.FC<NineBoxGridProps> = ({
               className="text-xs font-bold uppercase tracking-widest"
               style={{ color: colors.btn.primary }}
             >
-              Performance
+              {t('nineBox.performance')}
             </span>
           </div>
         </div>

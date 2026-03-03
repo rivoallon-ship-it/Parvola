@@ -7,3 +7,5 @@ export { Input, TextArea, Select } from './Input';
 export { EmptyState } from './EmptyState';
 export { ProgressBar } from './ProgressBar';
 export { StatusBadge } from './StatusBadge';
+export { CampaignStatusBadge } from './CampaignStatusBadge';
+export { EvaluationStatusBadge } from './EvaluationStatusBadge';

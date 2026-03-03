@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Briefcase, Edit2, Trash2, Plus, ChevronDown, FileText, Target } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Position, ObjectiveTemplate, NewTemplateForm, AISuggestedTemplate } from '@/types';
 import { Card, Button, Input, TextArea, EmptyState } from '@/components/common';
 import { TemplateCard } from './TemplateCard';
@@ -13,12 +14,12 @@ import { colors } from '@/constants/colors';
 interface PositionCardProps {
   position: Position;
   templates: ObjectiveTemplate[];
-  onEdit: () => void;
-  onDelete: () => void;
-  onAddTemplate: (template: NewTemplateForm) => void;
-  onEditTemplate: (template: ObjectiveTemplate) => void;
-  onDeleteTemplate: (id: string) => void;
-  onAcceptAITemplate: (template: AISuggestedTemplate) => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onAddTemplate?: (template: NewTemplateForm) => void;
+  onEditTemplate?: (template: ObjectiveTemplate) => void;
+  onDeleteTemplate?: (id: string) => void;
+  onAcceptAITemplate?: (template: AISuggestedTemplate) => void;
 }
 
 export const PositionCard: React.FC<PositionCardProps> = ({
@@ -31,6 +32,7 @@ export const PositionCard: React.FC<PositionCardProps> = ({
   onDeleteTemplate,
   onAcceptAITemplate,
 }) => {
+  const { t } = useTranslation();
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
@@ -44,7 +46,7 @@ export const PositionCard: React.FC<PositionCardProps> = ({
 
   const handleAddTemplate = () => {
     if (!newTemplate.title.trim()) return;
-    onAddTemplate(newTemplate);
+    onAddTemplate?.(newTemplate);
     setNewTemplate({
       positionId: position.id,
       title: '',
@@ -56,7 +58,7 @@ export const PositionCard: React.FC<PositionCardProps> = ({
 
   const handleUpdateTemplate = () => {
     if (!editingTemplate?.title.trim()) return;
-    onEditTemplate(editingTemplate);
+    onEditTemplate?.(editingTemplate);
     setEditingTemplate(null);
   };
 
@@ -73,27 +75,33 @@ export const PositionCard: React.FC<PositionCardProps> = ({
             {position.description && (
               <p className="text-sm text-gray-600 mt-1">{position.description}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">{templates.length} template(s)</p>
+            <p className="text-xs text-gray-500 mt-1">{templates.length} {t('templates.templateCount')}</p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button onClick={onEdit} className="text-amber-600 hover:text-amber-700">
-            <Edit2 size={20} />
-          </button>
-          <button onClick={onDelete} className="text-red-500 hover:text-red-700">
-            <Trash2 size={20} />
-          </button>
-        </div>
+        {(onEdit || onDelete) && (
+          <div className="flex gap-2">
+            {onEdit && (
+              <button onClick={onEdit} className="text-amber-600 hover:text-amber-700">
+                <Edit2 size={20} />
+              </button>
+            )}
+            {onDelete && (
+              <button onClick={onDelete} className="text-red-500 hover:text-red-700">
+                <Trash2 size={20} />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Add Template Menu */}
-      <div className="relative add-template-menu mb-4">
+      {onAddTemplate && <div className="relative add-template-menu mb-4">
         <Button
           variant="accent"
           icon={<Plus size={18} />}
           onClick={() => setShowAddMenu(!showAddMenu)}
         >
-          Ajouter un template
+          {t('templates.addTemplate')}
           <ChevronDown size={16} className="ml-1" />
         </Button>
 
@@ -113,9 +121,9 @@ export const PositionCard: React.FC<PositionCardProps> = ({
               <Plus size={18} style={{ color: colors.accent }} />
               <div>
                 <div className="font-medium" style={{ color: colors.btn.primary }}>
-                  Template vierge
+                  {t('templates.blankTemplate')}
                 </div>
-                <div className="text-xs text-gray-500">Créer de zéro</div>
+                <div className="text-xs text-gray-500">{t('templates.createFromScratch')}</div>
               </div>
             </button>
             <button
@@ -128,20 +136,20 @@ export const PositionCard: React.FC<PositionCardProps> = ({
               <Target size={18} className="text-purple-600" />
               <div>
                 <div className="font-medium" style={{ color: colors.btn.primary }}>
-                  Assistant IA
+                  {t('templates.aiAssistant')}
                 </div>
-                <div className="text-xs text-gray-500">Générer avec l'IA</div>
+                <div className="text-xs text-gray-500">{t('templates.generateWithAI')}</div>
               </div>
             </button>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* AI Assistant */}
-      {showAIAssistant && (
+      {onAddTemplate && showAIAssistant && (
         <TemplateAIAssistant
           position={position}
-          onAcceptTemplate={onAcceptAITemplate}
+          onAcceptTemplate={onAcceptAITemplate!}
           onClose={() => setShowAIAssistant(false)}
         />
       )}
@@ -152,21 +160,21 @@ export const PositionCard: React.FC<PositionCardProps> = ({
           className="p-4 rounded-lg mb-4"
           style={{ backgroundColor: colors.accentLight, border: `1px solid ${colors.accent}40` }}
         >
-          <h4 className="font-semibold mb-3">Nouveau template</h4>
+          <h4 className="font-semibold mb-3">{t('templates.newTemplate')}</h4>
           <div className="space-y-3">
             <Input
-              placeholder="Titre"
+              placeholder={t('templates.templateTitle')}
               value={newTemplate.title}
               onChange={(e) => setNewTemplate({ ...newTemplate, title: e.target.value })}
             />
             <TextArea
-              placeholder="Description"
+              placeholder={t('templates.templateDescription')}
               value={newTemplate.description}
               onChange={(e) => setNewTemplate({ ...newTemplate, description: e.target.value })}
             />
             <Input
               type="number"
-              label="Échéance suggérée (jours)"
+              label={t('templates.suggestedDeadline')}
               min={1}
               value={newTemplate.suggestedDeadlineDays}
               onChange={(e) =>
@@ -178,10 +186,10 @@ export const PositionCard: React.FC<PositionCardProps> = ({
             />
             <div className="flex gap-3">
               <Button variant="primary" onClick={handleAddTemplate}>
-                Ajouter
+                {t('common.add')}
               </Button>
               <Button variant="secondary" onClick={() => setShowAddForm(false)}>
-                Annuler
+                {t('common.cancel')}
               </Button>
             </div>
           </div>
@@ -194,7 +202,7 @@ export const PositionCard: React.FC<PositionCardProps> = ({
           className="p-4 rounded-lg mb-4"
           style={{ backgroundColor: '#FEF3C7', border: `1px solid ${colors.warning}` }}
         >
-          <h4 className="font-semibold mb-3">Modifier le template</h4>
+          <h4 className="font-semibold mb-3">{t('templates.editTemplate')}</h4>
           <div className="space-y-3">
             <Input
               value={editingTemplate.title}
@@ -208,7 +216,7 @@ export const PositionCard: React.FC<PositionCardProps> = ({
             />
             <Input
               type="number"
-              label="Échéance suggérée (jours)"
+              label={t('templates.suggestedDeadline')}
               min={1}
               value={editingTemplate.suggestedDeadlineDays}
               onChange={(e) =>
@@ -220,10 +228,10 @@ export const PositionCard: React.FC<PositionCardProps> = ({
             />
             <div className="flex gap-3">
               <Button variant="warning" onClick={handleUpdateTemplate}>
-                Sauvegarder
+                {t('common.save')}
               </Button>
               <Button variant="secondary" onClick={() => setEditingTemplate(null)}>
-                Annuler
+                {t('common.cancel')}
               </Button>
             </div>
           </div>
@@ -237,12 +245,12 @@ export const PositionCard: React.FC<PositionCardProps> = ({
             key={tmpl.id}
             template={tmpl}
             index={index}
-            onEdit={() => setEditingTemplate({ ...tmpl })}
-            onDelete={() => onDeleteTemplate(tmpl.id)}
+            onEdit={onEditTemplate ? () => setEditingTemplate({ ...tmpl }) : undefined}
+            onDelete={onDeleteTemplate ? () => onDeleteTemplate(tmpl.id) : undefined}
           />
         ))}
         {templates.length === 0 && !showAddForm && (
-          <EmptyState icon={FileText} message="Aucun template" />
+          <EmptyState icon={FileText} message={t('templates.noTemplate')} />
         )}
       </div>
     </Card>

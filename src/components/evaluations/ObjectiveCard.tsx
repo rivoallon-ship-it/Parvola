@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Edit2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Objective, ObjectiveStatus } from '@/types';
 import { Card, Input, TextArea, Select, StatusBadge } from '@/components/common';
 import { colors } from '@/constants/colors';
@@ -17,13 +18,6 @@ interface ObjectiveCardProps {
   readOnly?: boolean;
 }
 
-const statusOptions = [
-  { value: 'not_started', label: 'Non démarré' },
-  { value: 'in_progress', label: 'En cours' },
-  { value: 'completed', label: 'Terminé' },
-  { value: 'blocked', label: 'Bloqué' },
-];
-
 export const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
   objective,
   index,
@@ -31,8 +25,16 @@ export const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
   onDelete,
   readOnly = false,
 }) => {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(!objective.title && !readOnly);
+
+  const statusOptions = [
+    { value: 'not_started', label: t('status.notStarted') },
+    { value: 'in_progress', label: t('status.inProgress') },
+    { value: 'completed', label: t('status.completed') },
+    { value: 'blocked', label: t('status.blocked') },
+  ];
 
   return (
     <Card
@@ -54,7 +56,7 @@ export const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
             <Input
               value={objective.title}
               onChange={(e) => onUpdate('title', e.target.value)}
-              placeholder="Titre de l'objectif"
+              placeholder={t('objective.title')}
               className="font-semibold"
             />
           ) : (
@@ -63,7 +65,7 @@ export const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
               style={{ color: colors.btn.primary }}
               onClick={() => !readOnly && setIsEditing(true)}
             >
-              {objective.title || 'Sans titre'}
+              {objective.title || t('common.noTitle')}
             </h3>
           )}
         </div>
@@ -104,8 +106,8 @@ export const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
             <TextArea
               value={objective.description}
               onChange={(e) => onUpdate('description', e.target.value)}
-              placeholder="Description de l'objectif..."
-              label="Description"
+              placeholder={t('objective.descriptionPlaceholder')}
+              label={t('objective.description')}
             />
           ) : objective.description ? (
             <p className="text-gray-600">{objective.description}</p>
@@ -115,7 +117,7 @@ export const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Progression ({objective.progress}%)
+                {t('objective.progression')} ({objective.progress}%)
               </label>
               <div
                 className={`relative w-full h-4 rounded-full ${!readOnly ? 'cursor-pointer' : ''}`}
@@ -160,7 +162,7 @@ export const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
             </div>
 
             <Select
-              label="Statut"
+              label={t('objective.status')}
               value={objective.status}
               onChange={(e) => onUpdate('status', e.target.value as ObjectiveStatus)}
               options={statusOptions}
@@ -169,7 +171,7 @@ export const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
 
             <Input
               type="date"
-              label="Échéance"
+              label={t('objective.deadline')}
               value={objective.deadline}
               onChange={(e) => onUpdate('deadline', e.target.value)}
               disabled={readOnly}
@@ -179,15 +181,15 @@ export const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
           {/* Evaluation */}
           {isEditing && !readOnly ? (
             <TextArea
-              label="Évaluation"
+              label={t('objective.evaluation')}
               value={objective.evaluation || ''}
               onChange={(e) => onUpdate('evaluation', e.target.value)}
-              placeholder="Évaluation de l'objectif..."
+              placeholder={t('objective.descriptionPlaceholder')}
             />
           ) : objective.evaluation ? (
             <div className="rounded-lg p-3" style={{ backgroundColor: `${colors.accent}10` }}>
               <p className="text-sm text-gray-700">
-                <span className="font-medium" style={{ color: colors.accent }}>Évaluation:</span> {objective.evaluation}
+                <span className="font-medium" style={{ color: colors.accent }}>{t('objective.evaluationColon')}</span> {objective.evaluation}
               </p>
             </div>
           ) : null}
@@ -195,17 +197,17 @@ export const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
           {/* Comments */}
           {isEditing && !readOnly && (
             <TextArea
-              label="Commentaires"
+              label={t('objective.comments')}
               value={objective.comments}
               onChange={(e) => onUpdate('comments', e.target.value)}
-              placeholder="Ajouter des commentaires..."
+              placeholder={t('objective.commentsPlaceholder')}
             />
           )}
 
           {(!isEditing || readOnly) && objective.comments && (
             <div className="bg-gray-50 rounded-lg p-3">
               <p className="text-sm text-gray-600">
-                <span className="font-medium">Commentaires:</span> {objective.comments}
+                <span className="font-medium">{t('objective.comments')}:</span> {objective.comments}
               </p>
             </div>
           )}

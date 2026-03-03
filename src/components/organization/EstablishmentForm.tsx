@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Establishment, NewEstablishmentForm } from '@/types';
 import { Button, Input, TextArea } from '@/components/common';
 
@@ -21,6 +22,7 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({
   onDelete,
   isEditing = false,
 }) => {
+  const { t } = useTranslation();
   const [form, setForm] = useState<NewEstablishmentForm>({
     name: establishment?.name || '',
     description: establishment?.description || '',
@@ -40,29 +42,29 @@ export const EstablishmentForm: React.FC<EstablishmentFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input
-        label="Nom de l'établissement"
+        label={t('organization.establishmentName')}
         value={form.name}
         onChange={(e) => setForm({ ...form, name: e.target.value })}
-        placeholder="Ex: Siège social, Agence Nord..."
+        placeholder={t('organization.establishmentPlaceholder')}
         required
       />
       <TextArea
-        label="Description (optionnel)"
+        label={t('organization.descriptionOptional')}
         value={form.description}
         onChange={(e) => setForm({ ...form, description: e.target.value })}
-        placeholder="Description de l'établissement..."
+        placeholder={t('organization.establishmentDescPlaceholder')}
         rows={3}
       />
       <div className="flex gap-2 pt-2">
         <Button type="submit" variant="primary">
-          {isEditing ? 'Enregistrer' : 'Créer'}
+          {isEditing ? t('common.save') : t('common.create')}
         </Button>
         <Button type="button" variant="secondary" onClick={onCancel}>
-          Annuler
+          {t('common.cancel')}
         </Button>
         {isEditing && onDelete && (
           <Button type="button" variant="danger" onClick={onDelete} className="ml-auto">
-            Supprimer
+            {t('common.delete')}
           </Button>
         )}
       </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Building2, ChevronDown, ChevronRight, Edit2, Plus, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Establishment, Team, Employee } from '@/types';
 import { Card, Button } from '@/components/common';
 import { colors } from '@/constants/colors';
@@ -14,10 +15,10 @@ interface EstablishmentCardProps {
   establishment: Establishment;
   teams: Team[];
   employees: Employee[];
-  onEdit: () => void;
-  onAddTeam: () => void;
-  onEditTeam: (team: Team) => void;
-  onEditEmployee: (employee: Employee) => void;
+  onEdit?: () => void;
+  onAddTeam?: () => void;
+  onEditTeam?: (team: Team) => void;
+  onEditEmployee?: (employee: Employee) => void;
   onViewEmployeeEvaluations: (employee: Employee) => void;
   onDropEmployee?: (employeeId: string, establishmentId: string, teamId?: string) => void;
 }
@@ -33,17 +34,16 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
   onViewEmployeeEvaluations,
   onDropEmployee,
 }) => {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(true);
   const [isDragOver, setIsDragOver] = useState(false);
 
   const establishmentTeams = teams.filter((t) => t.establishmentId === establishment.id);
 
-  // Employés à la racine de l'établissement (sans équipe)
   const rootEmployees = employees.filter(
     (e) => e.establishmentId === establishment.id && !e.teamId
   );
 
-  // Employés dans les équipes de cet établissement
   const teamEmployees = employees.filter((e) =>
     establishmentTeams.some((t) => t.id === e.teamId)
   );
@@ -51,7 +51,6 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
   const teamCount = establishmentTeams.length;
   const totalEmployeeCount = rootEmployees.length + teamEmployees.length;
 
-  // Drag & Drop handlers
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(true);
@@ -80,7 +79,6 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
         onDrop={handleDrop}
       >
         <div className="flex items-center gap-4">
-          {/* Expand/Collapse button */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="p-1 hover:bg-gray-100 rounded transition"
@@ -92,7 +90,6 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
             )}
           </button>
 
-          {/* Icon */}
           <div
             className="p-3 rounded-lg"
             style={{ backgroundColor: `${colors.accent}20` }}
@@ -100,7 +97,6 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
             <Building2 size={24} style={{ color: colors.accent }} />
           </div>
 
-          {/* Info */}
           <div className="flex-1">
             <h3 className="text-lg font-bold" style={{ color: colors.btn.primary }}>
               {establishment.name}
@@ -109,51 +105,51 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
               <p className="text-sm text-gray-500">{establishment.description}</p>
             )}
             <p className="text-xs text-gray-400 mt-1">
-              {teamCount} équipe{teamCount > 1 ? 's' : ''} • {totalEmployeeCount} employé
-              {totalEmployeeCount > 1 ? 's' : ''}
+              {t('organization.teamCount', { count: teamCount })} • {t('organization.employeeCount', { count: totalEmployeeCount })}
             </p>
           </div>
 
-          {/* Actions */}
           <div className="flex gap-2">
-            <Button size="sm" variant="secondary" onClick={onAddTeam}>
-              <Plus size={16} className="mr-1" />
-              Équipe
-            </Button>
-            <button
-              onClick={onEdit}
-              className="p-2 rounded-full hover:bg-gray-100 transition"
-              title="Modifier l'établissement"
-            >
-              <Edit2 size={18} className="text-gray-500 hover:text-gray-700" />
-            </button>
+            {onAddTeam && (
+              <Button size="sm" variant="secondary" onClick={onAddTeam}>
+                <Plus size={16} className="mr-1" />
+                {t('organization.team')}
+              </Button>
+            )}
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="p-2 rounded-full hover:bg-gray-100 transition"
+                title={t('organization.editEstablishment')}
+              >
+                <Edit2 size={18} className="text-gray-500 hover:text-gray-700" />
+              </button>
+            )}
           </div>
         </div>
       </Card>
 
       {isExpanded && (
         <div className="ml-8 mt-2 space-y-2">
-          {/* Teams */}
           {establishmentTeams.map((team) => (
             <TeamCard
               key={team.id}
               team={team}
               employees={employees.filter((e) => e.teamId === team.id)}
-              onEdit={() => onEditTeam(team)}
-              onEditEmployee={onEditEmployee}
+              onEdit={onEditTeam ? () => onEditTeam(team) : undefined}
+              onEditEmployee={onEditEmployee || undefined}
               onViewEmployeeEvaluations={onViewEmployeeEvaluations}
               onDropEmployee={onDropEmployee}
               establishmentId={establishment.id}
             />
           ))}
 
-          {/* Root employees (at establishment level, no team) */}
           {rootEmployees.length > 0 && (
             <div className="mt-3">
               <div className="flex items-center gap-2 mb-2 text-gray-500">
                 <Users size={16} />
                 <span className="text-sm font-medium">
-                  Sans équipe ({rootEmployees.length})
+                  {t('organization.noTeam')} ({rootEmployees.length})
                 </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -161,7 +157,7 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
                   <EmployeeCard
                     key={employee.id}
                     employee={employee}
-                    onEdit={() => onEditEmployee(employee)}
+                    onEdit={onEditEmployee ? () => onEditEmployee(employee) : undefined}
                     onViewEvaluations={() => onViewEmployeeEvaluations(employee)}
                     draggable
                   />
@@ -170,13 +166,12 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
             </div>
           )}
 
-          {/* Empty state */}
           {establishmentTeams.length === 0 && rootEmployees.length === 0 && (
             <div className="p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center">
-              <p className="text-gray-500 text-sm">Aucune équipe dans cet établissement</p>
+              <p className="text-gray-500 text-sm">{t('organization.noTeamInEstablishment')}</p>
               <Button size="sm" variant="secondary" onClick={onAddTeam} className="mt-2">
                 <Plus size={16} className="mr-1" />
-                Créer une équipe
+                {t('organization.createTeam')}
               </Button>
             </div>
           )}

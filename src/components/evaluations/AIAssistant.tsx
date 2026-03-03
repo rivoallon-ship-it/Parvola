@@ -1,5 +1,6 @@
 import React from 'react';
 import { Target, Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { AISuggestedObjective, Employee, Semester } from '@/types';
 import { Card, Button, TextArea } from '@/components/common';
 import { colors } from '@/constants/colors';
@@ -22,6 +23,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   onAcceptObjective,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const { prompt, setPrompt, suggestions, isLoading, error, generate, reset } = useAIObjectives();
 
   const handleGenerate = () => {
@@ -48,10 +50,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           </div>
           <div>
             <h3 className="text-lg font-semibold" style={{ color: colors.btn.primary }}>
-              Assistant IA
+              {t('ai.title')}
             </h3>
             <p className="text-sm text-gray-600">
-              Décrivez les objectifs souhaités pour {employee.name}
+              {t('ai.describeObjectives', { name: employee.name })}
             </p>
           </div>
         </div>
@@ -64,7 +66,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       <TextArea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
-        placeholder="Ex: Améliorer ses compétences en communication, développer le leadership, etc..."
+        placeholder={t('ai.placeholder')}
         disabled={isLoading}
         className="mb-4"
       />
@@ -78,14 +80,14 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         icon={<Target size={18} />}
         style={{ backgroundColor: colors.purple }}
       >
-        {isLoading ? 'Génération...' : 'Générer des objectifs'}
+        {isLoading ? t('common.generating') : t('ai.generate')}
       </Button>
 
       {/* Suggestions */}
       {suggestions.length > 0 && (
         <div className="space-y-3 mt-4">
           <h4 className="font-semibold" style={{ color: colors.btn.primary }}>
-            Objectifs suggérés :
+            {t('ai.suggestedObjectives')}
           </h4>
           {suggestions.map((sug, i) => (
             <Card
@@ -101,7 +103,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               </h5>
               <p className="text-sm text-gray-600 mt-1">{sug.description}</p>
               {sug.deadline && (
-                <p className="text-xs text-gray-500 mt-2">📅 Échéance: {sug.deadline}</p>
+                <p className="text-xs text-gray-500 mt-2">{t('ai.deadlineLabel')} {sug.deadline}</p>
               )}
               <Button
                 variant="accent"
@@ -110,7 +112,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 icon={<Plus size={16} />}
                 className="mt-2"
               >
-                Ajouter cet objectif
+                {t('ai.addObjective')}
               </Button>
             </Card>
           ))}

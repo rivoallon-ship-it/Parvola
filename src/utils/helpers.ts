@@ -1,5 +1,6 @@
-import type { ObjectiveStatus } from '@/types';
+import type { ObjectiveStatus, CampaignStatus, EvaluationStatus } from '@/types';
 import { PROFILE_EMOJIS } from '@/constants/config';
+import i18n from '@/i18n';
 
 // ============================================
 // Fonctions utilitaires
@@ -23,13 +24,13 @@ export const getRandomEmoji = (): string => {
  * Retourne le libellé français d'un statut
  */
 export const getStatusLabel = (status: ObjectiveStatus): string => {
-  const labels: Record<ObjectiveStatus, string> = {
-    not_started: 'Non démarré',
-    in_progress: 'En cours',
-    completed: 'Terminé',
-    blocked: 'Bloqué',
+  const keys: Record<ObjectiveStatus, string> = {
+    not_started: 'status.notStarted',
+    in_progress: 'status.inProgress',
+    completed: 'status.completed',
+    blocked: 'status.blocked',
   };
-  return labels[status] || status;
+  return i18n.t(keys[status] || status);
 };
 
 /**
@@ -51,7 +52,8 @@ export const getStatusColor = (status: ObjectiveStatus): string => {
 export const formatDate = (dateString: string): string => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return date.toLocaleDateString('fr-FR', {
+  const locale = i18n.language || 'fr';
+  return date.toLocaleDateString(locale, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -71,7 +73,7 @@ export const calculateDeadline = (daysFromNow: number): string => {
  * Retourne la période d'un semestre
  */
 export const getSemesterPeriod = (semester: 'S1' | 'S2'): string => {
-  return semester === 'S1' ? 'Janvier - Juin' : 'Juillet - Décembre';
+  return semester === 'S1' ? i18n.t('semester.januaryJune') : i18n.t('semester.julyDecember');
 };
 
 /**
@@ -99,4 +101,50 @@ export const truncateText = (text: string, maxLength: number): string => {
  */
 export const cn = (...classes: (string | boolean | undefined | null)[]): string => {
   return classes.filter(Boolean).join(' ');
+};
+
+// ---------- Workflow Campagne / Évaluation ----------
+
+export const getCampaignStatusLabel = (status: CampaignStatus): string => {
+  const keys: Record<CampaignStatus, string> = {
+    draft: 'campaign.statusDraft',
+    active: 'campaign.statusActive',
+    closed: 'campaign.statusClosed',
+  };
+  return i18n.t(keys[status]);
+};
+
+export const getEvaluationStatusLabel = (status: EvaluationStatus): string => {
+  const keys: Record<EvaluationStatus, string> = {
+    not_started: 'evaluationStatus.notStarted',
+    in_progress: 'evaluationStatus.inProgress',
+    submitted: 'evaluationStatus.submitted',
+    validated: 'evaluationStatus.validated',
+  };
+  return i18n.t(keys[status]);
+};
+
+export const isEvaluationReadOnly = (
+  campaignStatus: CampaignStatus,
+  evaluationStatus?: EvaluationStatus
+): boolean => {
+  if (campaignStatus === 'draft') return true;
+  if (campaignStatus === 'closed') return true;
+  if (evaluationStatus === 'submitted') return true;
+  if (evaluationStatus === 'validated') return true;
+  return false;
+};
+
+export const canSubmitEvaluation = (
+  campaignStatus: CampaignStatus,
+  evaluationStatus?: EvaluationStatus
+): boolean => {
+  return campaignStatus === 'active' && evaluationStatus === 'in_progress';
+};
+
+export const canValidateEvaluation = (
+  campaignStatus: CampaignStatus,
+  evaluationStatus?: EvaluationStatus
+): boolean => {
+  return campaignStatus === 'active' && evaluationStatus === 'submitted';
 };

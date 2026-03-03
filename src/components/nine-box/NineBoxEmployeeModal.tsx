@@ -1,9 +1,10 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Employee, Evaluation } from '@/types';
 import { Modal, ProgressBar, StatusBadge, Button } from '@/components/common';
 import { NINE_BOX_CONFIG } from '@/constants/config';
 import { colors } from '@/constants/colors';
-import { useApp } from '@/hooks';
+import { useNavigation, useOrganization, useSemesters } from '@/hooks';
 
 interface NineBoxEmployeeModalProps {
   employee: Employee | null;
@@ -18,14 +19,10 @@ export const NineBoxEmployeeModal: React.FC<NineBoxEmployeeModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const {
-    establishments,
-    teams,
-    setSelectedEmployee,
-    setSelectedSemester,
-    setCurrentView,
-    semesters,
-  } = useApp();
+  const { t } = useTranslation();
+  const { setSelectedEmployee, setSelectedSemester, setCurrentView } = useNavigation();
+  const { establishments, teams } = useOrganization();
+  const { semesters } = useSemesters();
 
   if (!employee) return null;
 
@@ -39,10 +36,10 @@ export const NineBoxEmployeeModal: React.FC<NineBoxEmployeeModalProps> = ({
       : 0;
 
   const perfLabel = evaluation?.performanceRating
-    ? NINE_BOX_CONFIG.performanceLabels[evaluation.performanceRating - 1]
+    ? t(NINE_BOX_CONFIG.performanceLabelKeys[evaluation.performanceRating - 1])
     : '—';
   const potLabel = evaluation?.potentialRating
-    ? NINE_BOX_CONFIG.potentialLabels[evaluation.potentialRating - 1]
+    ? t(NINE_BOX_CONFIG.potentialLabelKeys[evaluation.potentialRating - 1])
     : '—';
 
   const cellKey = evaluation?.performanceRating && evaluation?.potentialRating
@@ -90,10 +87,10 @@ export const NineBoxEmployeeModal: React.FC<NineBoxEmployeeModalProps> = ({
               className="text-sm font-semibold"
               style={{ color: cellConfig.textColor }}
             >
-              {cellConfig.label}
+              {t(cellConfig.labelKey)}
             </span>
             <span className="text-xs text-gray-500">
-              Performance : {perfLabel} · Potentiel : {potLabel}
+              {t('nineBox.performance')} : {perfLabel} · {t('nineBox.potential')} : {potLabel}
             </span>
           </div>
         )}
@@ -102,7 +99,7 @@ export const NineBoxEmployeeModal: React.FC<NineBoxEmployeeModalProps> = ({
         {objectives.length > 0 && (
           <div>
             <div className="flex justify-between text-sm mb-2" style={{ color: colors.btn.primary }}>
-              <span className="font-medium">Progression globale</span>
+              <span className="font-medium">{t('nineBox.globalProgress')}</span>
               <span>{avgProgress}%</span>
             </div>
             <ProgressBar value={avgProgress} size="sm" />
@@ -113,7 +110,7 @@ export const NineBoxEmployeeModal: React.FC<NineBoxEmployeeModalProps> = ({
         {objectives.length > 0 ? (
           <div>
             <h4 className="text-sm font-semibold mb-2" style={{ color: colors.btn.primary }}>
-              Objectifs ({objectives.length})
+              {t('nineBox.objectives')} ({objectives.length})
             </h4>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {objectives.map((obj) => (
@@ -123,7 +120,7 @@ export const NineBoxEmployeeModal: React.FC<NineBoxEmployeeModalProps> = ({
                   style={{ backgroundColor: colors.body.bg }}
                 >
                   <span className="text-sm truncate mr-3" style={{ color: colors.btn.primary }}>
-                    {obj.title || 'Sans titre'}
+                    {obj.title || t('nineBox.untitled')}
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="text-xs text-gray-500">{obj.progress}%</span>
@@ -134,14 +131,14 @@ export const NineBoxEmployeeModal: React.FC<NineBoxEmployeeModalProps> = ({
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-400">Aucun objectif défini pour ce semestre.</p>
+          <p className="text-sm text-gray-400">{t('nineBox.noObjectives')}</p>
         )}
 
         {/* Action */}
         {evaluation && (
           <div className="pt-2">
             <Button variant="primary" size="sm" onClick={handleViewEvaluation}>
-              Voir l'évaluation complète
+              {t('nineBox.viewEvaluation')}
             </Button>
           </div>
         )}

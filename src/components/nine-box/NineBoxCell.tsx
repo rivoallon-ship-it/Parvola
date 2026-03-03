@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Employee, NineBoxRating } from '@/types';
 import { NINE_BOX_CONFIG } from '@/constants/config';
 import { NineBoxEmployeeChip } from './NineBoxEmployeeChip';
@@ -18,6 +19,7 @@ export const NineBoxCell: React.FC<NineBoxCellProps> = ({
   onDrop,
   onEmployeeClick,
 }) => {
+  const { t } = useTranslation();
   const [isDragOver, setIsDragOver] = useState(false);
   const cellKey = `${performance}-${potential}` as keyof typeof NINE_BOX_CONFIG.cells;
   const cellConfig = NINE_BOX_CONFIG.cells[cellKey];
@@ -60,7 +62,7 @@ export const NineBoxCell: React.FC<NineBoxCellProps> = ({
           className="text-[10px] font-semibold uppercase tracking-wide"
           style={{ color: cellConfig.textColor }}
         >
-          {cellConfig.label}
+          {t(cellConfig.labelKey)}
         </span>
         {employees.length > 0 && (
           <span

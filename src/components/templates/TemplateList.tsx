@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Plus, Briefcase } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Position, NewPositionForm, AISuggestedTemplate } from '@/types';
 import { Button, Card, Input, TextArea, EmptyState, ConfirmDialog } from '@/components/common';
 import { PageHeader } from '@/components/layout';
 import { PositionCard } from './PositionCard';
-import { useApp, useConfirmDialog } from '@/hooks';
+import { useTemplates, useConfirmDialog } from '@/hooks';
+import { useUser } from '@/hooks';
+import { canEditTemplates } from '@/utils/permissions';
 import { colors } from '@/constants/colors';
 
 // ============================================
@@ -12,16 +15,10 @@ import { colors } from '@/constants/colors';
 // ============================================
 
 export const TemplateList: React.FC = () => {
-  const {
-    positions,
-    templates,
-    addPosition,
-    updatePosition,
-    deletePosition,
-    addTemplate,
-    updateTemplate,
-    deleteTemplate,
-  } = useApp();
+  const { t } = useTranslation();
+  const { positions, templates, addPosition, updatePosition, deletePosition, addTemplate, updateTemplate, deleteTemplate } = useTemplates();
+  const { currentUser } = useUser();
+  const canEdit = canEditTemplates(currentUser.role);
 
   const [showAddPosition, setShowAddPosition] = useState(false);
   const [editingPosition, setEditingPosition] = useState<Position | null>(null);
@@ -43,14 +40,14 @@ export const TemplateList: React.FC = () => {
   };
 
   const handleDeletePosition = (id: string) => {
-    confirm('Supprimer ce poste et tous ses templates ?', async () => {
+    confirm(t('templates.deletePositionConfirm'), async () => {
       await deletePosition(id);
       close();
     });
   };
 
   const handleDeleteTemplate = (id: string) => {
-    confirm('Supprimer ce template ?', async () => {
+    confirm(t('templates.deleteTemplateConfirm'), async () => {
       await deleteTemplate(id);
       close();
     });
@@ -68,39 +65,41 @@ export const TemplateList: React.FC = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Gestion des postes"
+        title={t('templates.title')}
         action={
-          <Button
-            variant="primary"
-            icon={<Plus size={20} />}
-            onClick={() => setShowAddPosition(true)}
-          >
-            Nouveau Poste
-          </Button>
+          canEdit ? (
+            <Button
+              variant="primary"
+              icon={<Plus size={20} />}
+              onClick={() => setShowAddPosition(true)}
+            >
+              {t('templates.newPosition')}
+            </Button>
+          ) : undefined
         }
       />
 
       {/* Add Position Form */}
-      {showAddPosition && (
+      {canEdit && showAddPosition && (
         <Card>
-          <h3 className="text-lg font-semibold mb-4">Ajouter un poste</h3>
+          <h3 className="text-lg font-semibold mb-4">{t('templates.addPosition')}</h3>
           <div className="space-y-4">
             <Input
-              placeholder="Nom du poste"
+              placeholder={t('templates.positionName')}
               value={newPosition.name}
               onChange={(e) => setNewPosition({ ...newPosition, name: e.target.value })}
             />
             <TextArea
-              placeholder="Description (optionnel)"
+              placeholder={t('common.descriptionOptional')}
               value={newPosition.description}
               onChange={(e) => setNewPosition({ ...newPosition, description: e.target.value })}
             />
             <div className="flex gap-3">
               <Button variant="primary" onClick={handleAddPosition}>
-                Ajouter
+                {t('common.add')}
               </Button>
               <Button variant="secondary" onClick={() => setShowAddPosition(false)}>
-                Annuler
+                {t('common.cancel')}
               </Button>
             </div>
           </div>
@@ -108,9 +107,9 @@ export const TemplateList: React.FC = () => {
       )}
 
       {/* Edit Position Form */}
-      {editingPosition && (
+      {canEdit && editingPosition && (
         <Card borderColor={colors.warning}>
-          <h3 className="text-lg font-semibold mb-4">Modifier le poste</h3>
+          <h3 className="text-lg font-semibold mb-4">{t('templates.editPosition')}</h3>
           <div className="space-y-4">
             <Input
               value={editingPosition.name}
@@ -124,10 +123,10 @@ export const TemplateList: React.FC = () => {
             />
             <div className="flex gap-3">
               <Button variant="warning" onClick={handleUpdatePosition}>
-                Sauvegarder
+                {t('common.save')}
               </Button>
               <Button variant="secondary" onClick={() => setEditingPosition(null)}>
-                Annuler
+                {t('common.cancel')}
               </Button>
             </div>
           </div>
@@ -141,19 +140,19 @@ export const TemplateList: React.FC = () => {
             key={pos.id}
             position={pos}
             templates={templates.filter((t) => t.positionId === pos.id)}
-            onEdit={() => setEditingPosition({ ...pos })}
-            onDelete={() => handleDeletePosition(pos.id)}
-            onAddTemplate={(tmpl) => addTemplate(tmpl)}
-            onEditTemplate={(tmpl) => updateTemplate(tmpl)}
-            onDeleteTemplate={handleDeleteTemplate}
-            onAcceptAITemplate={(tmpl) => handleAcceptAITemplate(pos.id, tmpl)}
+            onEdit={canEdit ? () => setEditingPosition({ ...pos }) : undefined}
+            onDelete={canEdit ? () => handleDeletePosition(pos.id) : undefined}
+            onAddTemplate={canEdit ? (tmpl) => addTemplate(tmpl) : undefined}
+            onEditTemplate={canEdit ? (tmpl) => updateTemplate(tmpl) : undefined}
+            onDeleteTemplate={canEdit ? handleDeleteTemplate : undefined}
+            onAcceptAITemplate={canEdit ? (tmpl) => handleAcceptAITemplate(pos.id, tmpl) : undefined}
           />
         ))}
       </div>
 
       {/* Empty State */}
       {positions.length === 0 && !showAddPosition && (
-        <EmptyState icon={Briefcase} message="Aucun poste créé." />
+        <EmptyState icon={Briefcase} message={t('templates.noPosition')} />
       )}
 
       {/* Confirm Dialog */}

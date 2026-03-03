@@ -1,9 +1,11 @@
 import React from 'react';
-import { AppProvider, useApp } from '@/context';
+import { useTranslation } from 'react-i18next';
+import { AppProvider } from '@/context';
+import { useNavigation } from '@/hooks';
 import { Navigation } from '@/components/layout';
 import { EmployeeList } from '@/components/employees';
 import { SemesterList, SemesterTeamView } from '@/components/semesters';
-import { EvaluationView } from '@/components/evaluations';
+import { EvaluationView, MyEvaluationsView } from '@/components/evaluations';
 import { TemplateList } from '@/components/templates';
 import { NineBoxView } from '@/components/nine-box';
 import { colors } from '@/constants/colors';
@@ -13,7 +15,8 @@ import { colors } from '@/constants/colors';
 // ============================================
 
 const AppContent: React.FC = () => {
-  const { currentView, isLoading } = useApp();
+  const { currentView, isLoading } = useNavigation();
+  const { t } = useTranslation();
 
   if (isLoading) {
     return (
@@ -23,7 +26,7 @@ const AppContent: React.FC = () => {
       >
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-accent border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement...</p>
+          <p className="text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -43,6 +46,8 @@ const AppContent: React.FC = () => {
         return <EvaluationView />;
       case 'nine-box':
         return <NineBoxView />;
+      case 'my-evaluations':
+        return <MyEvaluationsView />;
       default:
         return <SemesterList />;
     }

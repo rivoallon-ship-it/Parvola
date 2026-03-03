@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Employee, NineBoxRating } from '@/types';
-import { useApp } from '@/hooks';
+import { useEmployees, useSemesters, useOrganization, useUser } from '@/hooks';
+import { getEmployeesInScope } from '@/utils/permissions';
 import { colors } from '@/constants/colors';
 import { PageHeader } from '@/components/layout';
 import { Card, EmptyState, Select } from '@/components/common';
@@ -10,14 +12,29 @@ import { NineBoxEmployeeChip } from './NineBoxEmployeeChip';
 import { NineBoxEmployeeModal } from './NineBoxEmployeeModal';
 
 export const NineBoxView: React.FC = () => {
-  const {
-    employees,
-    semesters,
-    evaluations,
-    establishments,
-    teams,
-    updateEvaluationRatings,
-  } = useApp();
+  const { t } = useTranslation();
+  const { employees } = useEmployees();
+  const { semesters, evaluations, updateEvaluationRatings } = useSemesters();
+  const { establishments, teams } = useOrganization();
+  const { currentUser } = useUser();
+  const isManager = currentUser.role === 'manager';
+
+  // Scope employees based on user role
+  const scopedEmployees = useMemo(
+    () => getEmployeesInScope(currentUser, employees, teams),
+    [currentUser, employees, teams]
+  );
+
+  // Scope establishments and teams for manager
+  const scopedEstablishments = useMemo(() => {
+    if (!isManager) return establishments;
+    return establishments.filter((est) => est.id === currentUser.establishmentId);
+  }, [establishments, isManager, currentUser.establishmentId]);
+
+  const scopedTeams = useMemo(() => {
+    if (!isManager || !currentUser.teamIds) return teams;
+    return teams.filter((t) => currentUser.teamIds!.includes(t.id));
+  }, [teams, isManager, currentUser.teamIds]);
 
   const [selectedSemesterId, setSelectedSemesterId] = useState('');
   const [selectedEstablishmentId, setSelectedEstablishmentId] = useState('');
@@ -37,12 +54,12 @@ export const NineBoxView: React.FC = () => {
 
   // Chained filters
   const filteredTeams = useMemo(() => {
-    if (!selectedEstablishmentId) return teams;
-    return teams.filter((t) => t.establishmentId === selectedEstablishmentId);
-  }, [teams, selectedEstablishmentId]);
+    if (!selectedEstablishmentId) return scopedTeams;
+    return scopedTeams.filter((t) => t.establishmentId === selectedEstablishmentId);
+  }, [scopedTeams, selectedEstablishmentId]);
 
   const filteredEmployees = useMemo(() => {
-    let result = employees;
+    let result = scopedEmployees;
     if (selectedEstablishmentId) {
       const teamIds = filteredTeams.map((t) => t.id);
       result = result.filter(
@@ -56,12 +73,12 @@ export const NineBoxView: React.FC = () => {
       result = result.filter((e) => e.position === selectedPosition);
     }
     return result;
-  }, [employees, selectedEstablishmentId, selectedTeamId, selectedPosition, filteredTeams]);
+  }, [scopedEmployees, selectedEstablishmentId, selectedTeamId, selectedPosition, filteredTeams]);
 
   // Unique positions for filter
   const positions = useMemo(
-    () => [...new Set(employees.map((e) => e.position).filter(Boolean))].sort(),
-    [employees]
+    () => [...new Set(scopedEmployees.map((e) => e.position).filter(Boolean))].sort(),
+    [scopedEmployees]
   );
 
   // Unpositioned employees (no ratings for selected semester)
@@ -101,38 +118,38 @@ export const NineBoxView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Matrice 9-Box" />
+      <PageHeader title={t('nineBox.title')} />
 
       {/* Filters */}
       <Card padding="md">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Select
-            label="Semestre"
-            placeholder="Sélectionner un semestre"
+            label={t('nineBox.semester')}
+            placeholder={t('nineBox.selectSemester')}
             value={selectedSemesterId}
             onChange={(e) => setSelectedSemesterId(e.target.value)}
             options={sortedSemesters.map((s) => ({ value: s.id, label: s.name }))}
           />
 
           <Select
-            label="Établissement"
-            placeholder="Tous"
+            label={t('nineBox.establishment')}
+            placeholder={t('common.all')}
             value={selectedEstablishmentId}
             onChange={(e) => handleEstablishmentChange(e.target.value)}
-            options={establishments.map((est) => ({ value: est.id, label: est.name }))}
+            options={scopedEstablishments.map((est) => ({ value: est.id, label: est.name }))}
           />
 
           <Select
-            label="Équipe"
-            placeholder="Toutes"
+            label={t('nineBox.team')}
+            placeholder={t('common.allFeminine')}
             value={selectedTeamId}
             onChange={(e) => setSelectedTeamId(e.target.value)}
             options={filteredTeams.map((t) => ({ value: t.id, label: t.name }))}
           />
 
           <Select
-            label="Poste"
-            placeholder="Tous"
+            label={t('nineBox.position')}
+            placeholder={t('common.all')}
             value={selectedPosition}
             onChange={(e) => setSelectedPosition(e.target.value)}
             options={positions.map((pos) => ({ value: pos, label: pos }))}
@@ -143,7 +160,7 @@ export const NineBoxView: React.FC = () => {
       {!selectedSemesterId ? (
         <EmptyState
           icon={Users}
-          message="Sélectionnez un semestre pour afficher la matrice 9-Box"
+          message={t('nineBox.selectSemesterHint')}
         />
       ) : (
         <>
@@ -151,9 +168,9 @@ export const NineBoxView: React.FC = () => {
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Users size={14} />
             <span>
-              <strong style={{ color: colors.btn.primary }}>{positionedCount}</strong> employé
-              {positionedCount !== 1 ? 's' : ''} positionné{positionedCount !== 1 ? 's' : ''} /{' '}
-              {filteredEmployees.length} au total
+              <strong style={{ color: colors.btn.primary }}>{positionedCount}</strong>{' '}
+              {t('nineBox.positionedCount', { count: positionedCount })} /{' '}
+              {filteredEmployees.length} {t('nineBox.total')}
             </span>
           </div>
 
@@ -175,10 +192,10 @@ export const NineBoxView: React.FC = () => {
                 className="text-sm font-semibold mb-3"
                 style={{ color: colors.btn.primary }}
               >
-                Employés non positionnés ({unpositionedEmployees.length})
+                {t('nineBox.unpositioned')} ({unpositionedEmployees.length})
               </h3>
               <p className="text-xs text-gray-400 mb-3">
-                Glissez-déposez les employés dans la matrice pour les positionner.
+                {t('nineBox.dragHint')}
               </p>
               <div className="flex flex-wrap gap-2">
                 {unpositionedEmployees.map((emp) => (

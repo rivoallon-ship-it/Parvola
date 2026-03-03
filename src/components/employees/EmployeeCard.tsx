@@ -1,5 +1,6 @@
 import React from 'react';
 import { Edit2, GripVertical } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Employee } from '@/types';
 import { Card } from '@/components/common';
 import { colors } from '@/constants/colors';
@@ -10,7 +11,7 @@ import { colors } from '@/constants/colors';
 
 interface EmployeeCardProps {
   employee: Employee;
-  onEdit: () => void;
+  onEdit?: () => void;
   onViewEvaluations: () => void;
   draggable?: boolean;
 }
@@ -21,6 +22,7 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
   onViewEvaluations,
   draggable = false,
 }) => {
+  const { t } = useTranslation();
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('employeeId', employee.id);
     e.dataTransfer.effectAllowed = 'move';
@@ -35,16 +37,18 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
       onDragStart={draggable ? handleDragStart : undefined}
     >
       {/* Bouton édition en haut à droite */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onEdit();
-        }}
-        className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition"
-        title="Modifier le profil"
-      >
-        <Edit2 size={18} className="text-gray-500 hover:text-gray-700" />
-      </button>
+      {onEdit && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition"
+          title={t('employees.editProfile')}
+        >
+          <Edit2 size={18} className="text-gray-500 hover:text-gray-700" />
+        </button>
+      )}
 
       <div className="flex items-center gap-4">
         {/* Grip pour drag & drop */}

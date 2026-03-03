@@ -1,5 +1,6 @@
 import React from 'react';
 import { Target, Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { AISuggestedTemplate, Position } from '@/types';
 import { Card, Button, TextArea } from '@/components/common';
 import { colors } from '@/constants/colors';
@@ -20,6 +21,7 @@ export const TemplateAIAssistant: React.FC<TemplateAIAssistantProps> = ({
   onAcceptTemplate,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const { prompt, setPrompt, suggestions, isLoading, error, generate } = useAITemplates();
 
   const handleGenerate = () => {
@@ -46,10 +48,10 @@ export const TemplateAIAssistant: React.FC<TemplateAIAssistantProps> = ({
           </div>
           <div>
             <h3 className="text-lg font-semibold" style={{ color: colors.btn.primary }}>
-              Assistant IA pour les templates
+              {t('templateAI.title')}
             </h3>
             <p className="text-sm text-gray-600">
-              Décrivez le type de templates souhaité pour "{position.name}"
+              {t('templateAI.describe', { name: position.name })}
             </p>
           </div>
         </div>
@@ -62,7 +64,7 @@ export const TemplateAIAssistant: React.FC<TemplateAIAssistantProps> = ({
       <TextArea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
-        placeholder="Ex: templates pour améliorer les compétences en service client, gestion du temps, etc..."
+        placeholder={t('templateAI.placeholder')}
         disabled={isLoading}
         className="mb-4"
       />
@@ -76,14 +78,14 @@ export const TemplateAIAssistant: React.FC<TemplateAIAssistantProps> = ({
         icon={<Target size={18} />}
         style={{ backgroundColor: colors.purple }}
       >
-        {isLoading ? 'Génération...' : 'Générer'}
+        {isLoading ? t('common.generating') : t('templateAI.generate')}
       </Button>
 
       {/* Suggestions */}
       {suggestions.length > 0 && (
         <div className="space-y-3 mt-4">
           <h4 className="font-semibold" style={{ color: colors.btn.primary }}>
-            Templates suggérés :
+            {t('templateAI.suggested')}
           </h4>
           {suggestions.map((tmpl, i) => (
             <Card
@@ -99,7 +101,7 @@ export const TemplateAIAssistant: React.FC<TemplateAIAssistantProps> = ({
               </h5>
               <p className="text-sm text-gray-600 mt-1">{tmpl.description}</p>
               <p className="text-xs text-gray-500 mt-2">
-                📅 Échéance suggérée: {tmpl.suggestedDeadlineDays || 90} jours
+                {t('templateAI.suggestedDeadline')} {tmpl.suggestedDeadlineDays || 90} jours
               </p>
               <Button
                 variant="accent"
@@ -108,7 +110,7 @@ export const TemplateAIAssistant: React.FC<TemplateAIAssistantProps> = ({
                 icon={<Plus size={16} />}
                 className="mt-2"
               >
-                Ajouter ce template
+                {t('templateAI.addTemplate')}
               </Button>
             </Card>
           ))}
