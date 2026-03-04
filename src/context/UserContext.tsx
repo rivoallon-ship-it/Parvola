@@ -1,71 +1,73 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import type { UserContextType, User } from '@/types';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import { fetchProfile } from '@/services/supabase-data';
+import type { UserContextType, User, UserRole } from '@/types';
 
 // ============================================
-// Utilisateurs simulés pour la démo
+// Supabase Auth — UserContext
 // ============================================
-
-export const SIMULATED_USERS: User[] = [
-  {
-    id: 'user-rh',
-    name: 'Sophie Laurent',
-    photo: '👱🏾‍♀️',
-    role: 'rh',
-    employeeId: 'emp-8',
-  },
-  {
-    id: 'user-manager',
-    name: 'Kenji Tanaka',
-    photo: '👨🏻',
-    role: 'manager',
-    employeeId: 'emp-1',
-    teamIds: ['team-1', 'team-2'],
-    establishmentId: 'est-1',
-  },
-  {
-    id: 'user-employee',
-    name: 'Maxime Bernard',
-    photo: '👨🏻‍🦰',
-    role: 'employee',
-    employeeId: 'emp-6',
-  },
-];
-
-const STORAGE_KEY = 'currentUserId';
-
-const getInitialUser = (): User => {
-  try {
-    const savedId = localStorage.getItem(STORAGE_KEY);
-    if (savedId) {
-      const found = SIMULATED_USERS.find((u) => u.id === savedId);
-      if (found) return found;
-    }
-  } catch {
-    // ignore localStorage errors
-  }
-  return SIMULATED_USERS[0]; // RH by default
-};
 
 const UserContext = createContext<UserContextType | null>(null);
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User>(getInitialUser);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
-  const switchUser = useCallback((userId: string) => {
-    const user = SIMULATED_USERS.find((u) => u.id === userId);
-    if (user) {
-      setCurrentUser(user);
-      try {
-        localStorage.setItem(STORAGE_KEY, userId);
-      } catch {
-        // ignore
-      }
+  const loadProfile = useCallback(async (userId: string) => {
+    try {
+      const profile = await fetchProfile(userId);
+      setCurrentUser({
+        id: profile.id,
+        name: profile.name,
+        photo: profile.photo,
+        role: profile.role as UserRole,
+        employeeId: profile.employee_id || undefined,
+        teamIds: profile.team_ids || undefined,
+        establishmentId: profile.establishment_id || undefined,
+      });
+    } catch (err) {
+      console.error('Failed to load profile:', err);
+      setCurrentUser(null);
     }
+  }, []);
+
+  useEffect(() => {
+    // Check existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        loadProfile(session.user.id).finally(() => setIsAuthLoading(false));
+      } else {
+        setIsAuthLoading(false);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        loadProfile(session.user.id);
+      } else {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [loadProfile]);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  }, []);
+
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
+    setCurrentUser(null);
   }, []);
 
   const value: UserContextType = {
     currentUser,
-    switchUser,
+    isAuthLoading,
+    signIn,
+    signOut,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

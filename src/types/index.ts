@@ -25,11 +25,13 @@ export interface User {
 }
 
 export interface UserState {
-  currentUser: User;
+  currentUser: User | null;
+  isAuthLoading: boolean;
 }
 
 export interface UserActions {
-  switchUser: (userId: string) => void;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 export type UserContextType = UserState & UserActions;
@@ -266,6 +268,7 @@ export interface SemesterActions {
   publishCampaign: (semesterId: string) => Promise<void>;
   closeCampaign: (semesterId: string) => Promise<void>;
   addObjective: (employeeId: string, semesterId: string) => Promise<void>;
+  addObjectiveWithData: (employeeId: string, semesterId: string, data: Partial<Objective>) => Promise<void>;
   addObjectiveFromTemplate: (templateId: string) => Promise<void>;
   updateObjective: (evalId: string, objId: string, field: keyof Objective, value: string | number) => Promise<void>;
   deleteObjective: (evalId: string, objId: string) => Promise<void>;
@@ -329,6 +332,7 @@ export interface AppActions {
   addSemester: (semester: NewSemesterForm) => Promise<void>;
   deleteSemester: (id: string) => Promise<void>;
   addObjective: (employeeId: string, semesterId: string) => Promise<void>;
+  addObjectiveWithData: (employeeId: string, semesterId: string, data: Partial<Objective>) => Promise<void>;
   addObjectiveFromTemplate: (templateId: string) => Promise<void>;
   updateObjective: (evalId: string, objId: string, field: keyof Objective, value: string | number) => Promise<void>;
   deleteObjective: (evalId: string, objId: string) => Promise<void>;

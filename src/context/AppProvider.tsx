@@ -1,93 +1,78 @@
-import React, { useEffect, useCallback, useRef } from 'react';
-import { storage } from '@/services/storage';
-import { seedData } from '@/data/seedData';
-import { UserProvider } from './UserContext';
+import React, { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { fetchAllData } from '@/services/supabase-data';
+import { UserProvider, useUserContext } from './UserContext';
 import { NavigationProvider, useNavigationContext } from './NavigationContext';
-import { EmployeeProvider, useEmployeeContext } from './EmployeeContext';
+import { EmployeeProvider } from './EmployeeContext';
 import { OrganizationProvider } from './OrganizationContext';
-import { SemesterProvider, useSemesterContext } from './SemesterContext';
+import { SemesterProvider } from './SemesterContext';
 import { TemplateProvider, useTemplateContext } from './TemplateContext';
+import { LoginPage } from '@/components/auth';
+import { colors } from '@/constants/colors';
 import type { Employee, Semester, ObjectiveTemplate, StorageData } from '@/types';
 
-// Migrate existing data to new workflow schema
-const migrateData = (data: Awaited<ReturnType<typeof storage.loadAll>>) => {
-  let needsPersist = false;
+// Auth gate — only renders children (DataLoader) when authenticated
+const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser, isAuthLoading } = useUserContext();
+  const { t } = useTranslation();
 
-  // Semesters without status → 'active' (they were already usable)
-  const semesters = data.semesters.map((s) => {
-    if (!s.status) {
-      needsPersist = true;
-      return { ...s, status: 'active' as const };
-    }
-    return s;
-  });
-
-  // Evaluations: ensure validationStatus is set
-  const evaluations = data.evaluations.map((e) => {
-    if (!e.validationStatus) {
-      needsPersist = true;
-      return {
-        ...e,
-        validationStatus: e.objectives.length > 0
-          ? 'in_progress' as const
-          : 'not_started' as const,
-      };
-    }
-    return e;
-  });
-
-  if (needsPersist) {
-    storage.setSemesters(semesters);
-    storage.setEvaluations(evaluations);
+  if (isAuthLoading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: colors.body.bg }}
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-accent border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600">{t('common.loading')}</p>
+        </div>
+      </div>
+    );
   }
 
-  return { ...data, semesters, evaluations };
+  if (!currentUser) {
+    return <LoginPage />;
+  }
+
+  return <>{children}</>;
 };
 
-// Check if loaded data is empty (all arrays empty)
-const isDataEmpty = (data: StorageData): boolean => {
-  return (
-    data.employees.length === 0 &&
-    data.semesters.length === 0 &&
-    data.evaluations.length === 0 &&
-    data.positions.length === 0 &&
-    data.templates.length === 0 &&
-    data.establishments.length === 0 &&
-    data.teams.length === 0
-  );
-};
-
-// Persist seed data to storage
-const persistSeedData = async (data: StorageData) => {
-  await Promise.all([
-    storage.setEmployees(data.employees),
-    storage.setSemesters(data.semesters),
-    storage.setEvaluations(data.evaluations),
-    storage.setPositions(data.positions),
-    storage.setTemplates(data.templates),
-    storage.setEstablishments(data.establishments),
-    storage.setTeams(data.teams),
-  ]);
-};
-
-// DataLoader loads data and initializes all contexts
+// DataLoader fetches all data from Supabase and initializes contexts
 const DataLoader: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [data, setData] = React.useState<Awaited<ReturnType<typeof storage.loadAll>> | null>(null);
+  const [data, setData] = React.useState<StorageData | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   useEffect(() => {
-    storage.loadAll().then(async (raw) => {
-      // If storage is completely empty, load seed data
-      if (isDataEmpty(raw)) {
-        await persistSeedData(seedData);
-        setData(seedData);
-      } else {
-        setData(migrateData(raw));
-      }
-    });
+    fetchAllData()
+      .then(setData)
+      .catch((err) => {
+        console.error('Failed to load data from Supabase:', err);
+        setError(err.message);
+      });
   }, []);
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center text-red-600">
+          <p className="font-semibold">Erreur de chargement</p>
+          <p className="text-sm mt-2">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!data) {
-    return null;
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: colors.body.bg }}
+      >
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-accent border-t-transparent mx-auto mb-4"></div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -97,36 +82,16 @@ const DataLoader: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   );
 };
 
-interface DataLoadedProvidersProps {
-  data: Awaited<ReturnType<typeof storage.loadAll>>;
-  children: React.ReactNode;
-}
-
-const DataLoadedProviders: React.FC<DataLoadedProvidersProps> = ({ data, children }) => {
-  const employeeSetterRef = useRef<((employees: Employee[]) => void) | null>(null);
-  const evaluationSetterRef = useRef<((evaluations: import('@/types').Evaluation[]) => void) | null>(null);
+const DataLoadedProviders: React.FC<{ data: StorageData; children: React.ReactNode }> = ({ data, children }) => {
   const selectedEmployeeRef = useRef<(() => Employee | null) | null>(null);
   const selectedSemesterRef = useRef<(() => Semester | null) | null>(null);
   const templatesRef = useRef<(() => ObjectiveTemplate[]) | null>(null);
-
-  const handleEmployeesChanged = useCallback((updater: (employees: Employee[]) => Employee[]) => {
-    if (employeeSetterRef.current) {
-      storage.getEmployees().then((employees) => {
-        if (employees) {
-          const updated = updater(employees);
-          storage.setEmployees(updated);
-          employeeSetterRef.current?.(updated);
-        }
-      });
-    }
-  }, []);
 
   return (
     <EmployeeProvider initialEmployees={data.employees}>
       <OrganizationProvider
         initialEstablishments={data.establishments}
         initialTeams={data.teams}
-        onEmployeesChanged={handleEmployeesChanged}
       >
         <SemesterProvider
           initialSemesters={data.semesters}
@@ -140,8 +105,6 @@ const DataLoadedProviders: React.FC<DataLoadedProvidersProps> = ({ data, childre
             initialTemplates={data.templates}
           >
             <RefWiring
-              employeeSetterRef={employeeSetterRef}
-              evaluationSetterRef={evaluationSetterRef}
               selectedEmployeeRef={selectedEmployeeRef}
               selectedSemesterRef={selectedSemesterRef}
               templatesRef={templatesRef}
@@ -158,19 +121,13 @@ const DataLoadedProviders: React.FC<DataLoadedProvidersProps> = ({ data, childre
 
 // Wires refs to actual context values
 const RefWiring: React.FC<{
-  employeeSetterRef: React.MutableRefObject<((employees: Employee[]) => void) | null>;
-  evaluationSetterRef: React.MutableRefObject<((evaluations: import('@/types').Evaluation[]) => void) | null>;
   selectedEmployeeRef: React.MutableRefObject<(() => Employee | null) | null>;
   selectedSemesterRef: React.MutableRefObject<(() => Semester | null) | null>;
   templatesRef: React.MutableRefObject<(() => ObjectiveTemplate[]) | null>;
-}> = ({ employeeSetterRef, evaluationSetterRef, selectedEmployeeRef, selectedSemesterRef, templatesRef }) => {
-  const { setEmployees } = useEmployeeContext();
-  const { setEvaluations } = useSemesterContext();
+}> = ({ selectedEmployeeRef, selectedSemesterRef, templatesRef }) => {
   const { selectedEmployee, selectedSemester } = useNavigationContext();
   const { templates } = useTemplateContext();
 
-  employeeSetterRef.current = setEmployees;
-  evaluationSetterRef.current = setEvaluations;
   selectedEmployeeRef.current = () => selectedEmployee;
   selectedSemesterRef.current = () => selectedSemester;
   templatesRef.current = () => templates;
@@ -197,9 +154,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <UserProvider>
       <NavigationProvider>
-        <DataLoader>
-          {children}
-        </DataLoader>
+        <AuthGate>
+          <DataLoader>
+            {children}
+          </DataLoader>
+        </AuthGate>
       </NavigationProvider>
     </UserProvider>
   );

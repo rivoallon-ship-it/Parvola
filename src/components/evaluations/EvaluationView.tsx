@@ -14,7 +14,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { AISuggestedObjective, ObjectiveTemplate, NineBoxRating, Evaluation } from '@/types';
+import type { AISuggestedObjective, ObjectiveTemplate, NineBoxRating } from '@/types';
 import { Card, Button, Modal, EmptyState, ConfirmDialog, Select, TextArea, EvaluationStatusBadge } from '@/components/common';
 import { BackButton } from '@/components/layout';
 import { ObjectiveCard } from './ObjectiveCard';
@@ -23,10 +23,9 @@ import { InterviewGuideModal } from './InterviewGuideModal';
 import { useNavigation, useEmployees, useSemesters, useTemplates, useConfirmDialog, useUser } from '@/hooks';
 import { printExport } from '@/services/excel';
 import { colors } from '@/constants/colors';
-import { generateId, isEvaluationReadOnly } from '@/utils/helpers';
+import { isEvaluationReadOnly } from '@/utils/helpers';
 import { canSubmitEvaluation, canValidateEvaluation, canViewNineBoxRatings, canViewBilanManager, canViewInterviewGuide } from '@/utils/permissions';
-import { storage } from '@/services/storage';
-import { OBJECTIVE_CONFIG, NINE_BOX_CONFIG } from '@/constants/config';
+import { NINE_BOX_CONFIG } from '@/constants/config';
 
 // ============================================
 // Composant EvaluationView (Vue principale d'évaluation)
@@ -36,7 +35,7 @@ export const EvaluationView: React.FC = () => {
   const { t } = useTranslation();
   const { selectedEmployee, selectedSemester, viewingSemester, setCurrentView, setSelectedEmployee, setSelectedSemester } = useNavigation();
   const { employees } = useEmployees();
-  const { semesters, evaluations, addObjective, addObjectiveFromTemplate, updateObjective, deleteObjective, reorderObjectives, duplicateObjectives, updateEvaluationBilan, updateEvaluationRatings, submitEvaluation, validateEvaluation, setEvaluations } = useSemesters();
+  const { semesters, evaluations, addObjective, addObjectiveWithData, addObjectiveFromTemplate, updateObjective, deleteObjective, reorderObjectives, duplicateObjectives, updateEvaluationBilan, updateEvaluationRatings, submitEvaluation, validateEvaluation } = useSemesters();
   const { templates, positions } = useTemplates();
   const { currentUser } = useUser();
   const userRole = currentUser.role;
@@ -145,41 +144,11 @@ export const EvaluationView: React.FC = () => {
   const handleAcceptAISuggestion = async (suggestion: AISuggestedObjective) => {
     if (!selectedEmployee || !selectedSemester) return;
 
-    const objective = {
-      id: generateId(),
+    await addObjectiveWithData(selectedEmployee.id, selectedSemester.id, {
       title: suggestion.title,
       description: suggestion.description,
-      status: OBJECTIVE_CONFIG.defaultStatus,
-      progress: OBJECTIVE_CONFIG.defaultProgress,
       deadline: suggestion.deadline || '',
-      comments: '',
-      evaluation: '',
-    };
-
-    const existing = evaluations.find(
-      (e) => e.employeeId === selectedEmployee.id && e.semesterId === selectedSemester.id
-    );
-
-    let newEvaluations: Evaluation[];
-    if (existing) {
-      newEvaluations = evaluations.map((e) =>
-        e.id === existing.id ? { ...e, objectives: [...e.objectives, objective] } : e
-      );
-    } else {
-      newEvaluations = [
-        ...evaluations,
-        {
-          id: generateId(),
-          employeeId: selectedEmployee.id,
-          semesterId: selectedSemester.id,
-          objectives: [objective],
-          validationStatus: 'in_progress' as const,
-        },
-      ];
-    }
-
-    await storage.setEvaluations(newEvaluations);
-    setEvaluations(newEvaluations);
+    });
     setShowAIAssistant(false);
   };
 

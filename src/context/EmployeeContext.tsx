@@ -1,15 +1,31 @@
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
 import type { EmployeeContextType, EmployeeState, Employee, NewEmployeeForm } from '@/types';
-import { storage } from '@/services/storage';
-import { generateId } from '@/utils/helpers';
+import {
+  insertEmployee,
+  insertEmployees,
+  updateEmployeeDb,
+  deleteEmployeeDb,
+} from '@/services/supabase-data';
 
 type Action =
-  | { type: 'SET_EMPLOYEES'; payload: Employee[] };
+  | { type: 'SET_EMPLOYEES'; payload: Employee[] }
+  | { type: 'ADD_EMPLOYEE'; payload: Employee }
+  | { type: 'ADD_EMPLOYEES'; payload: Employee[] }
+  | { type: 'UPDATE_EMPLOYEE'; payload: Employee }
+  | { type: 'REMOVE_EMPLOYEE'; payload: string };
 
 const reducer = (state: EmployeeState, action: Action): EmployeeState => {
   switch (action.type) {
     case 'SET_EMPLOYEES':
       return { ...state, employees: action.payload };
+    case 'ADD_EMPLOYEE':
+      return { ...state, employees: [...state.employees, action.payload] };
+    case 'ADD_EMPLOYEES':
+      return { ...state, employees: [...state.employees, ...action.payload] };
+    case 'UPDATE_EMPLOYEE':
+      return { ...state, employees: state.employees.map((e) => e.id === action.payload.id ? action.payload : e) };
+    case 'REMOVE_EMPLOYEE':
+      return { ...state, employees: state.employees.filter((e) => e.id !== action.payload) };
     default:
       return state;
   }
@@ -32,51 +48,25 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children, in
   }, []);
 
   const addEmployee = useCallback(async (form: NewEmployeeForm) => {
-    const employee: Employee = {
-      id: generateId(),
-      name: form.name,
-      position: form.position,
-      photo: form.photo || '👤',
-      establishmentId: form.establishmentId,
-      teamId: form.teamId,
-      salary: form.salary,
-      lateCount: form.lateCount,
-      unjustifiedAbsences: form.unjustifiedAbsences,
-      justifiedAbsences: form.justifiedAbsences,
-    };
-    const newEmployees = [...state.employees, employee];
-    await storage.setEmployees(newEmployees);
-    dispatch({ type: 'SET_EMPLOYEES', payload: newEmployees });
-  }, [state.employees]);
+    const employee = await insertEmployee(form);
+    dispatch({ type: 'ADD_EMPLOYEE', payload: employee });
+  }, []);
 
   const updateEmployee = useCallback(async (employee: Employee) => {
-    const newEmployees = state.employees.map((e) => (e.id === employee.id ? employee : e));
-    await storage.setEmployees(newEmployees);
-    dispatch({ type: 'SET_EMPLOYEES', payload: newEmployees });
-  }, [state.employees]);
+    await updateEmployeeDb(employee);
+    dispatch({ type: 'UPDATE_EMPLOYEE', payload: employee });
+  }, []);
 
   const deleteEmployee = useCallback(async (id: string) => {
-    const newEmployees = state.employees.filter((e) => e.id !== id);
-    // Also clean up evaluations for this employee
-    const evaluations = await storage.getEvaluations();
-    if (evaluations) {
-      const newEvaluations = evaluations.filter((e) => e.employeeId !== id);
-      await storage.setEvaluations(newEvaluations);
-    }
-    await storage.setEmployees(newEmployees);
-    dispatch({ type: 'SET_EMPLOYEES', payload: newEmployees });
-  }, [state.employees]);
+    // CASCADE in DB handles evaluations + objectives automatically
+    await deleteEmployeeDb(id);
+    dispatch({ type: 'REMOVE_EMPLOYEE', payload: id });
+  }, []);
 
   const importEmployees = useCallback(async (imported: Omit<Employee, 'id'>[], establishmentId?: string) => {
-    const newEmployees = imported.map((emp) => ({
-      ...emp,
-      id: generateId(),
-      establishmentId: establishmentId || emp.establishmentId,
-    }));
-    const allEmployees = [...state.employees, ...newEmployees];
-    await storage.setEmployees(allEmployees);
-    dispatch({ type: 'SET_EMPLOYEES', payload: allEmployees });
-  }, [state.employees]);
+    const created = await insertEmployees(imported, establishmentId);
+    dispatch({ type: 'ADD_EMPLOYEES', payload: created });
+  }, []);
 
   const value: EmployeeContextType = {
     ...state,

@@ -1,4 +1,12 @@
 {
+  "auth.subtitle": "Talent management platform",
+  "auth.signIn": "Sign in",
+  "auth.email": "Email",
+  "auth.password": "Password",
+  "auth.signInButton": "Sign in",
+  "auth.signOutButton": "Sign out",
+  "auth.genericError": "An error occurred during sign in",
+  "auth.demoHint": "Demo accounts",
   "common.save": "Save",
   "common.cancel": "Cancel",
   "common.delete": "Delete",

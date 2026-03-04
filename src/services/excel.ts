@@ -1,7 +1,6 @@
 import * as XLSX from 'xlsx';
 import type { Employee, Semester, Objective } from '@/types';
 import { getRandomEmoji, getStatusLabel } from '@/utils/helpers';
-import { generateId } from '@/utils/helpers';
 import i18n from '@/i18n';
 
 // ============================================
@@ -48,16 +47,6 @@ export const parseEmployeesFromExcel = async (file: File): Promise<ImportedEmplo
   }
 
   return employees;
-};
-
-/**
- * Convertit les employés importés en objets Employee complets
- */
-export const convertToEmployees = (imported: ImportedEmployee[]): Employee[] => {
-  return imported.map((emp) => ({
-    id: generateId(),
-    ...emp,
-  }));
 };
 
 /**

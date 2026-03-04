@@ -7,13 +7,6 @@ import i18n from '@/i18n';
 // ============================================
 
 /**
- * Génère un identifiant unique
- */
-export const generateId = (): string => {
-  return Date.now().toString() + Math.random().toString(36).substr(2, 9);
-};
-
-/**
  * Retourne un emoji aléatoire pour les photos de profil
  */
 export const getRandomEmoji = (): string => {

@@ -12,20 +12,112 @@ import type {
   Employee,
   ObjectiveTemplate,
 } from '@/types';
-import { storage } from '@/services/storage';
-import { generateId, calculateDeadline } from '@/utils/helpers';
+import {
+  insertSemester,
+  updateSemesterDb,
+  deleteSemesterDb,
+  insertEvaluation,
+  updateEvaluationDb,
+  insertObjectiveDb,
+  insertObjectivesBatch,
+  updateObjectiveDb,
+  deleteObjectiveDb,
+  reorderObjectivesDb,
+} from '@/services/supabase-data';
+import { calculateDeadline } from '@/utils/helpers';
 import { OBJECTIVE_CONFIG } from '@/constants/config';
 
 type Action =
   | { type: 'SET_SEMESTERS'; payload: Semester[] }
-  | { type: 'SET_EVALUATIONS'; payload: Evaluation[] };
+  | { type: 'ADD_SEMESTER'; payload: Semester }
+  | { type: 'UPDATE_SEMESTER'; payload: Semester }
+  | { type: 'REMOVE_SEMESTER'; payload: string }
+  | { type: 'SET_EVALUATIONS'; payload: Evaluation[] }
+  | { type: 'ADD_EVALUATION'; payload: Evaluation }
+  | { type: 'UPDATE_EVALUATION'; payload: { id: string; changes: Partial<Evaluation> } }
+  | { type: 'REMOVE_EVALUATIONS_BY_SEMESTER'; payload: string }
+  | { type: 'ADD_OBJECTIVE'; payload: { evalId: string; objective: Objective } }
+  | { type: 'ADD_OBJECTIVES'; payload: { evalId: string; objectives: Objective[] } }
+  | { type: 'UPDATE_OBJECTIVE'; payload: { evalId: string; objId: string; field: keyof Objective; value: string | number } }
+  | { type: 'REMOVE_OBJECTIVE'; payload: { evalId: string; objId: string } }
+  | { type: 'REORDER_OBJECTIVES'; payload: { evalId: string; fromIdx: number; toIdx: number } };
 
 const reducer = (state: SemesterState, action: Action): SemesterState => {
   switch (action.type) {
     case 'SET_SEMESTERS':
       return { ...state, semesters: action.payload };
+    case 'ADD_SEMESTER':
+      return { ...state, semesters: [...state.semesters, action.payload] };
+    case 'UPDATE_SEMESTER':
+      return { ...state, semesters: state.semesters.map((s) => s.id === action.payload.id ? action.payload : s) };
+    case 'REMOVE_SEMESTER':
+      return { ...state, semesters: state.semesters.filter((s) => s.id !== action.payload) };
     case 'SET_EVALUATIONS':
       return { ...state, evaluations: action.payload };
+    case 'ADD_EVALUATION':
+      return { ...state, evaluations: [...state.evaluations, action.payload] };
+    case 'UPDATE_EVALUATION':
+      return {
+        ...state,
+        evaluations: state.evaluations.map((e) =>
+          e.id === action.payload.id ? { ...e, ...action.payload.changes } : e
+        ),
+      };
+    case 'REMOVE_EVALUATIONS_BY_SEMESTER':
+      return { ...state, evaluations: state.evaluations.filter((e) => e.semesterId !== action.payload) };
+    case 'ADD_OBJECTIVE':
+      return {
+        ...state,
+        evaluations: state.evaluations.map((e) =>
+          e.id === action.payload.evalId
+            ? { ...e, objectives: [...e.objectives, action.payload.objective] }
+            : e
+        ),
+      };
+    case 'ADD_OBJECTIVES':
+      return {
+        ...state,
+        evaluations: state.evaluations.map((e) =>
+          e.id === action.payload.evalId
+            ? { ...e, objectives: [...e.objectives, ...action.payload.objectives] }
+            : e
+        ),
+      };
+    case 'UPDATE_OBJECTIVE':
+      return {
+        ...state,
+        evaluations: state.evaluations.map((e) =>
+          e.id === action.payload.evalId
+            ? {
+                ...e,
+                objectives: e.objectives.map((o) =>
+                  o.id === action.payload.objId ? { ...o, [action.payload.field]: action.payload.value } : o
+                ),
+              }
+            : e
+        ),
+      };
+    case 'REMOVE_OBJECTIVE':
+      return {
+        ...state,
+        evaluations: state.evaluations.map((e) =>
+          e.id === action.payload.evalId
+            ? { ...e, objectives: e.objectives.filter((o) => o.id !== action.payload.objId) }
+            : e
+        ),
+      };
+    case 'REORDER_OBJECTIVES': {
+      return {
+        ...state,
+        evaluations: state.evaluations.map((e) => {
+          if (e.id !== action.payload.evalId) return e;
+          const objectives = [...e.objectives];
+          const [removed] = objectives.splice(action.payload.fromIdx, 1);
+          objectives.splice(action.payload.toIdx, 0, removed);
+          return { ...e, objectives };
+        }),
+      };
+    }
     default:
       return state;
   }
@@ -59,62 +151,61 @@ export const SemesterProvider: React.FC<SemesterProviderProps> = ({
     dispatch({ type: 'SET_EVALUATIONS', payload: evaluations });
   }, []);
 
+  // Helper: get or create an evaluation for employee+semester
+  const getOrCreateEval = useCallback(async (employeeId: string, semesterId: string): Promise<{ eval: Evaluation; isNew: boolean }> => {
+    const existing = state.evaluations.find(
+      (e) => e.employeeId === employeeId && e.semesterId === semesterId
+    );
+    if (existing) return { eval: existing, isNew: false };
+
+    const newEval = await insertEvaluation({ employeeId, semesterId, validationStatus: 'in_progress' });
+    dispatch({ type: 'ADD_EVALUATION', payload: newEval });
+    return { eval: newEval, isNew: true };
+  }, [state.evaluations]);
+
   const addSemester = useCallback(async (form: NewSemesterForm) => {
-    const semester: Semester = {
-      id: generateId(),
-      year: form.year,
-      semester: form.semester,
-      name: `${form.semester} ${form.year}`,
-      status: 'draft',
-      closingDeadline: form.closingDeadline || undefined,
-    };
-    const newSemesters = [...state.semesters, semester];
-    await storage.setSemesters(newSemesters);
-    dispatch({ type: 'SET_SEMESTERS', payload: newSemesters });
-  }, [state.semesters]);
+    const semester = await insertSemester(form);
+    dispatch({ type: 'ADD_SEMESTER', payload: semester });
+  }, []);
 
   const updateSemester = useCallback(async (updated: Semester) => {
-    const newSemesters = state.semesters.map((s) =>
-      s.id === updated.id ? updated : s
-    );
-    await storage.setSemesters(newSemesters);
-    dispatch({ type: 'SET_SEMESTERS', payload: newSemesters });
-  }, [state.semesters]);
+    await updateSemesterDb(updated);
+    dispatch({ type: 'UPDATE_SEMESTER', payload: updated });
+  }, []);
 
   const publishCampaign = useCallback(async (semesterId: string) => {
-    const newSemesters = state.semesters.map((s) =>
-      s.id === semesterId && s.status === 'draft'
-        ? { ...s, status: 'active' as const }
-        : s
-    );
-    await storage.setSemesters(newSemesters);
-    dispatch({ type: 'SET_SEMESTERS', payload: newSemesters });
+    const sem = state.semesters.find((s) => s.id === semesterId);
+    if (!sem || sem.status !== 'draft') return;
+    const updated = { ...sem, status: 'active' as const };
+    await updateSemesterDb(updated);
+    dispatch({ type: 'UPDATE_SEMESTER', payload: updated });
   }, [state.semesters]);
 
   const closeCampaign = useCallback(async (semesterId: string) => {
-    const newSemesters = state.semesters.map((s) =>
-      s.id === semesterId && s.status === 'active'
-        ? { ...s, status: 'closed' as const }
-        : s
-    );
-    await storage.setSemesters(newSemesters);
-    dispatch({ type: 'SET_SEMESTERS', payload: newSemesters });
+    const sem = state.semesters.find((s) => s.id === semesterId);
+    if (!sem || sem.status !== 'active') return;
+    const updated = { ...sem, status: 'closed' as const };
+    await updateSemesterDb(updated);
+    dispatch({ type: 'UPDATE_SEMESTER', payload: updated });
   }, [state.semesters]);
 
   const deleteSemester = useCallback(async (id: string) => {
-    const newSemesters = state.semesters.filter((s) => s.id !== id);
-    const newEvaluations = state.evaluations.filter((e) => e.semesterId !== id);
-    await Promise.all([
-      storage.setSemesters(newSemesters),
-      storage.setEvaluations(newEvaluations),
-    ]);
-    dispatch({ type: 'SET_SEMESTERS', payload: newSemesters });
-    dispatch({ type: 'SET_EVALUATIONS', payload: newEvaluations });
-  }, [state.semesters, state.evaluations]);
+    // CASCADE in DB handles evaluations + objectives automatically
+    await deleteSemesterDb(id);
+    dispatch({ type: 'REMOVE_SEMESTER', payload: id });
+    dispatch({ type: 'REMOVE_EVALUATIONS_BY_SEMESTER', payload: id });
+  }, []);
 
   const addObjective = useCallback(async (employeeId: string, semesterId: string) => {
-    const objective: Objective = {
-      id: generateId(),
+    const { eval: evaluation } = await getOrCreateEval(employeeId, semesterId);
+
+    // Auto-upgrade status from not_started
+    if (!evaluation.validationStatus || evaluation.validationStatus === 'not_started') {
+      await updateEvaluationDb(evaluation.id, { validationStatus: 'in_progress' });
+      dispatch({ type: 'UPDATE_EVALUATION', payload: { id: evaluation.id, changes: { validationStatus: 'in_progress' } } });
+    }
+
+    const objective = await insertObjectiveDb(evaluation.id, {
       title: '',
       description: '',
       status: OBJECTIVE_CONFIG.defaultStatus,
@@ -122,39 +213,31 @@ export const SemesterProvider: React.FC<SemesterProviderProps> = ({
       deadline: '',
       comments: '',
       evaluation: '',
-    };
+    }, evaluation.objectives.length);
 
-    const existing = state.evaluations.find(
-      (e) => e.employeeId === employeeId && e.semesterId === semesterId
-    );
+    dispatch({ type: 'ADD_OBJECTIVE', payload: { evalId: evaluation.id, objective } });
+  }, [getOrCreateEval]);
 
-    let newEvaluations: Evaluation[];
-    if (existing) {
-      newEvaluations = state.evaluations.map((e) =>
-        e.id === existing.id
-          ? {
-              ...e,
-              objectives: [...e.objectives, objective],
-              validationStatus: (!e.validationStatus || e.validationStatus === 'not_started')
-                ? 'in_progress' as const
-                : e.validationStatus,
-            }
-          : e
-      );
-    } else {
-      const newEval: Evaluation = {
-        id: generateId(),
-        employeeId,
-        semesterId,
-        objectives: [objective],
-        validationStatus: 'in_progress',
-      };
-      newEvaluations = [...state.evaluations, newEval];
+  const addObjectiveWithData = useCallback(async (employeeId: string, semesterId: string, data: Partial<Objective>) => {
+    const { eval: evaluation } = await getOrCreateEval(employeeId, semesterId);
+
+    if (!evaluation.validationStatus || evaluation.validationStatus === 'not_started') {
+      await updateEvaluationDb(evaluation.id, { validationStatus: 'in_progress' });
+      dispatch({ type: 'UPDATE_EVALUATION', payload: { id: evaluation.id, changes: { validationStatus: 'in_progress' } } });
     }
 
-    await storage.setEvaluations(newEvaluations);
-    dispatch({ type: 'SET_EVALUATIONS', payload: newEvaluations });
-  }, [state.evaluations]);
+    const objective = await insertObjectiveDb(evaluation.id, {
+      title: data.title || '',
+      description: data.description || '',
+      status: data.status || OBJECTIVE_CONFIG.defaultStatus,
+      progress: data.progress ?? OBJECTIVE_CONFIG.defaultProgress,
+      deadline: data.deadline || '',
+      comments: data.comments || '',
+      evaluation: data.evaluation || '',
+    }, evaluation.objectives.length);
+
+    dispatch({ type: 'ADD_OBJECTIVE', payload: { evalId: evaluation.id, objective } });
+  }, [getOrCreateEval]);
 
   const addObjectiveFromTemplate = useCallback(async (templateId: string) => {
     const selectedEmployee = getSelectedEmployee?.();
@@ -166,8 +249,14 @@ export const SemesterProvider: React.FC<SemesterProviderProps> = ({
     const template = templates.find((t) => t.id === templateId);
     if (!template) return;
 
-    const objective: Objective = {
-      id: generateId(),
+    const { eval: evaluation } = await getOrCreateEval(selectedEmployee.id, selectedSemester.id);
+
+    if (!evaluation.validationStatus || evaluation.validationStatus === 'not_started') {
+      await updateEvaluationDb(evaluation.id, { validationStatus: 'in_progress' });
+      dispatch({ type: 'UPDATE_EVALUATION', payload: { id: evaluation.id, changes: { validationStatus: 'in_progress' } } });
+    }
+
+    const objective = await insertObjectiveDb(evaluation.id, {
       title: template.title,
       description: template.description,
       status: OBJECTIVE_CONFIG.defaultStatus,
@@ -175,39 +264,10 @@ export const SemesterProvider: React.FC<SemesterProviderProps> = ({
       deadline: calculateDeadline(template.suggestedDeadlineDays),
       comments: '',
       evaluation: '',
-    };
+    }, evaluation.objectives.length);
 
-    const existing = state.evaluations.find(
-      (e) => e.employeeId === selectedEmployee.id && e.semesterId === selectedSemester.id
-    );
-
-    let newEvaluations: Evaluation[];
-    if (existing) {
-      newEvaluations = state.evaluations.map((e) =>
-        e.id === existing.id
-          ? {
-              ...e,
-              objectives: [...e.objectives, objective],
-              validationStatus: (!e.validationStatus || e.validationStatus === 'not_started')
-                ? 'in_progress' as const
-                : e.validationStatus,
-            }
-          : e
-      );
-    } else {
-      const newEval: Evaluation = {
-        id: generateId(),
-        employeeId: selectedEmployee.id,
-        semesterId: selectedSemester.id,
-        objectives: [objective],
-        validationStatus: 'in_progress',
-      };
-      newEvaluations = [...state.evaluations, newEval];
-    }
-
-    await storage.setEvaluations(newEvaluations);
-    dispatch({ type: 'SET_EVALUATIONS', payload: newEvaluations });
-  }, [state.evaluations, getSelectedEmployee, getSelectedSemester, getTemplates]);
+    dispatch({ type: 'ADD_OBJECTIVE', payload: { evalId: evaluation.id, objective } });
+  }, [getOrCreateEval, getSelectedEmployee, getSelectedSemester, getTemplates]);
 
   const updateObjective = useCallback(async (
     evalId: string,
@@ -215,42 +275,26 @@ export const SemesterProvider: React.FC<SemesterProviderProps> = ({
     field: keyof Objective,
     value: string | number
   ) => {
-    const newEvaluations = state.evaluations.map((e) =>
-      e.id === evalId
-        ? {
-            ...e,
-            objectives: e.objectives.map((o) =>
-              o.id === objId ? { ...o, [field]: value } : o
-            ),
-          }
-        : e
-    );
-    await storage.setEvaluations(newEvaluations);
-    dispatch({ type: 'SET_EVALUATIONS', payload: newEvaluations });
-  }, [state.evaluations]);
+    await updateObjectiveDb(objId, field, value);
+    dispatch({ type: 'UPDATE_OBJECTIVE', payload: { evalId, objId, field, value } });
+  }, []);
 
   const deleteObjective = useCallback(async (evalId: string, objId: string) => {
-    const newEvaluations = state.evaluations.map((e) =>
-      e.id === evalId
-        ? { ...e, objectives: e.objectives.filter((o) => o.id !== objId) }
-        : e
-    );
-    await storage.setEvaluations(newEvaluations);
-    dispatch({ type: 'SET_EVALUATIONS', payload: newEvaluations });
-  }, [state.evaluations]);
+    await deleteObjectiveDb(objId);
+    dispatch({ type: 'REMOVE_OBJECTIVE', payload: { evalId, objId } });
+  }, []);
 
   const reorderObjectives = useCallback(async (evalId: string, fromIdx: number, toIdx: number) => {
-    const newEvaluations = state.evaluations.map((e) => {
-      if (e.id === evalId) {
-        const objectives = [...e.objectives];
-        const [removed] = objectives.splice(fromIdx, 1);
-        objectives.splice(toIdx, 0, removed);
-        return { ...e, objectives };
-      }
-      return e;
-    });
-    await storage.setEvaluations(newEvaluations);
-    dispatch({ type: 'SET_EVALUATIONS', payload: newEvaluations });
+    // Optimistic update
+    dispatch({ type: 'REORDER_OBJECTIVES', payload: { evalId, fromIdx, toIdx } });
+
+    // Compute new order and persist
+    const evaluation = state.evaluations.find((e) => e.id === evalId);
+    if (!evaluation) return;
+    const objectives = [...evaluation.objectives];
+    const [removed] = objectives.splice(fromIdx, 1);
+    objectives.splice(toIdx, 0, removed);
+    await reorderObjectivesDb(evalId, objectives.map((o) => o.id));
   }, [state.evaluations]);
 
   const duplicateObjectives = useCallback(async (config: DuplicateConfig) => {
@@ -267,69 +311,40 @@ export const SemesterProvider: React.FC<SemesterProviderProps> = ({
     const selectedObjs = currentEval.objectives
       .filter((o) => config.selectedObjectives.includes(o.id))
       .map((o) => ({
-        ...o,
-        id: generateId(),
-        progress: 0,
+        title: o.title,
+        description: o.description,
         status: OBJECTIVE_CONFIG.defaultStatus,
+        progress: 0,
+        deadline: o.deadline,
         comments: '',
         evaluation: '',
       }));
 
-    const existing = state.evaluations.find(
-      (e) =>
-        e.employeeId === config.targetEmployeeId &&
-        e.semesterId === config.targetSemesterId
+    const { eval: targetEval } = await getOrCreateEval(config.targetEmployeeId, config.targetSemesterId);
+
+    const created = await insertObjectivesBatch(
+      targetEval.id,
+      selectedObjs,
+      targetEval.objectives.length
     );
 
-    let newEvaluations: Evaluation[];
-    if (existing) {
-      newEvaluations = state.evaluations.map((e) =>
-        e.id === existing.id
-          ? { ...e, objectives: [...e.objectives, ...selectedObjs] }
-          : e
-      );
-    } else {
-      const newEval: Evaluation = {
-        id: generateId(),
-        employeeId: config.targetEmployeeId,
-        semesterId: config.targetSemesterId,
-        objectives: selectedObjs,
-      };
-      newEvaluations = [...state.evaluations, newEval];
-    }
-
-    await storage.setEvaluations(newEvaluations);
-    dispatch({ type: 'SET_EVALUATIONS', payload: newEvaluations });
-  }, [state.evaluations, getSelectedEmployee, getSelectedSemester]);
+    dispatch({ type: 'ADD_OBJECTIVES', payload: { evalId: targetEval.id, objectives: created } });
+  }, [state.evaluations, getOrCreateEval, getSelectedEmployee, getSelectedSemester]);
 
   const updateEvaluationStatus = useCallback(async (
     employeeId: string,
     semesterId: string,
     status: EvaluationStatus
   ) => {
-    const existing = state.evaluations.find(
-      (e) => e.employeeId === employeeId && e.semesterId === semesterId
-    );
-
-    let newEvaluations: Evaluation[];
-    if (existing) {
-      newEvaluations = state.evaluations.map((e) =>
-        e.id === existing.id ? { ...e, validationStatus: status } : e
-      );
+    const { eval: evaluation, isNew } = await getOrCreateEval(employeeId, semesterId);
+    if (!isNew) {
+      await updateEvaluationDb(evaluation.id, { validationStatus: status });
+      dispatch({ type: 'UPDATE_EVALUATION', payload: { id: evaluation.id, changes: { validationStatus: status } } });
     } else {
-      const newEval: Evaluation = {
-        id: generateId(),
-        employeeId,
-        semesterId,
-        objectives: [],
-        validationStatus: status,
-      };
-      newEvaluations = [...state.evaluations, newEval];
+      await updateEvaluationDb(evaluation.id, { validationStatus: status });
+      dispatch({ type: 'UPDATE_EVALUATION', payload: { id: evaluation.id, changes: { validationStatus: status } } });
     }
-
-    await storage.setEvaluations(newEvaluations);
-    dispatch({ type: 'SET_EVALUATIONS', payload: newEvaluations });
-  }, [state.evaluations]);
+  }, [getOrCreateEval]);
 
   const submitEvaluation = useCallback(async (employeeId: string, semesterId: string) => {
     const existing = state.evaluations.find(
@@ -337,11 +352,8 @@ export const SemesterProvider: React.FC<SemesterProviderProps> = ({
     );
     if (!existing || existing.validationStatus !== 'in_progress') return;
 
-    const newEvaluations = state.evaluations.map((e) =>
-      e.id === existing.id ? { ...e, validationStatus: 'submitted' as const } : e
-    );
-    await storage.setEvaluations(newEvaluations);
-    dispatch({ type: 'SET_EVALUATIONS', payload: newEvaluations });
+    await updateEvaluationDb(existing.id, { validationStatus: 'submitted' });
+    dispatch({ type: 'UPDATE_EVALUATION', payload: { id: existing.id, changes: { validationStatus: 'submitted' } } });
   }, [state.evaluations]);
 
   const validateEvaluation = useCallback(async (employeeId: string, semesterId: string) => {
@@ -350,11 +362,8 @@ export const SemesterProvider: React.FC<SemesterProviderProps> = ({
     );
     if (!existing || existing.validationStatus !== 'submitted') return;
 
-    const newEvaluations = state.evaluations.map((e) =>
-      e.id === existing.id ? { ...e, validationStatus: 'validated' as const } : e
-    );
-    await storage.setEvaluations(newEvaluations);
-    dispatch({ type: 'SET_EVALUATIONS', payload: newEvaluations });
+    await updateEvaluationDb(existing.id, { validationStatus: 'validated' });
+    dispatch({ type: 'UPDATE_EVALUATION', payload: { id: existing.id, changes: { validationStatus: 'validated' } } });
   }, [state.evaluations]);
 
   const updateEvaluationBilan = useCallback(async (
@@ -363,29 +372,10 @@ export const SemesterProvider: React.FC<SemesterProviderProps> = ({
     field: 'bilanManager' | 'bilanEmployee',
     value: string
   ) => {
-    const existing = state.evaluations.find(
-      (e) => e.employeeId === employeeId && e.semesterId === semesterId
-    );
-
-    let newEvaluations: Evaluation[];
-    if (existing) {
-      newEvaluations = state.evaluations.map((e) =>
-        e.id === existing.id ? { ...e, [field]: value } : e
-      );
-    } else {
-      const newEval: Evaluation = {
-        id: generateId(),
-        employeeId,
-        semesterId,
-        objectives: [],
-        [field]: value,
-      };
-      newEvaluations = [...state.evaluations, newEval];
-    }
-
-    await storage.setEvaluations(newEvaluations);
-    dispatch({ type: 'SET_EVALUATIONS', payload: newEvaluations });
-  }, [state.evaluations]);
+    const { eval: evaluation } = await getOrCreateEval(employeeId, semesterId);
+    await updateEvaluationDb(evaluation.id, { [field]: value } as Record<string, string>);
+    dispatch({ type: 'UPDATE_EVALUATION', payload: { id: evaluation.id, changes: { [field]: value } } });
+  }, [getOrCreateEval]);
 
   const updateEvaluationRatings = useCallback(async (
     employeeId: string,
@@ -393,30 +383,10 @@ export const SemesterProvider: React.FC<SemesterProviderProps> = ({
     performanceRating: NineBoxRating,
     potentialRating: NineBoxRating
   ) => {
-    const existing = state.evaluations.find(
-      (e) => e.employeeId === employeeId && e.semesterId === semesterId
-    );
-
-    let newEvaluations: Evaluation[];
-    if (existing) {
-      newEvaluations = state.evaluations.map((e) =>
-        e.id === existing.id ? { ...e, performanceRating, potentialRating } : e
-      );
-    } else {
-      const newEval: Evaluation = {
-        id: generateId(),
-        employeeId,
-        semesterId,
-        objectives: [],
-        performanceRating,
-        potentialRating,
-      };
-      newEvaluations = [...state.evaluations, newEval];
-    }
-
-    await storage.setEvaluations(newEvaluations);
-    dispatch({ type: 'SET_EVALUATIONS', payload: newEvaluations });
-  }, [state.evaluations]);
+    const { eval: evaluation } = await getOrCreateEval(employeeId, semesterId);
+    await updateEvaluationDb(evaluation.id, { performanceRating, potentialRating });
+    dispatch({ type: 'UPDATE_EVALUATION', payload: { id: evaluation.id, changes: { performanceRating, potentialRating } } });
+  }, [getOrCreateEval]);
 
   const value: SemesterContextType = {
     ...state,
@@ -426,6 +396,7 @@ export const SemesterProvider: React.FC<SemesterProviderProps> = ({
     publishCampaign,
     closeCampaign,
     addObjective,
+    addObjectiveWithData,
     addObjectiveFromTemplate,
     updateObjective,
     deleteObjective,

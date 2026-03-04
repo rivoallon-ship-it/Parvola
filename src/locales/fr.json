@@ -1,4 +1,12 @@
 {
+  "auth.subtitle": "Plateforme de gestion des talents",
+  "auth.signIn": "Connexion",
+  "auth.email": "Email",
+  "auth.password": "Mot de passe",
+  "auth.signInButton": "Se connecter",
+  "auth.signOutButton": "Se déconnecter",
+  "auth.genericError": "Une erreur est survenue lors de la connexion",
+  "auth.demoHint": "Comptes de démonstration",
   "common.save": "Sauvegarder",
   "common.cancel": "Annuler",
   "common.delete": "Supprimer",

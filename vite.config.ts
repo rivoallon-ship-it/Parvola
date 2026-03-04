@@ -19,19 +19,18 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
-    proxy: {
-      '/api/anthropic': {
-        target: 'https://api.anthropic.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/anthropic/, ''),
-        headers: {
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-      },
-    },
   },
   build: {
     outDir: 'dist',
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          supabase: ['@supabase/supabase-js'],
+          i18n: ['i18next', 'react-i18next'],
+          xlsx: ['xlsx'],
+        },
+      },
+    },
   },
 });

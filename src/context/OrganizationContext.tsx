@@ -7,19 +7,46 @@ import type {
   NewEstablishmentForm,
   NewTeamForm,
 } from '@/types';
-import { storage } from '@/services/storage';
-import { generateId } from '@/utils/helpers';
+import {
+  insertEstablishment,
+  updateEstablishmentDb,
+  deleteEstablishmentDb,
+  insertTeam,
+  updateTeamDb,
+  deleteTeamDb,
+} from '@/services/supabase-data';
 
 type Action =
   | { type: 'SET_ESTABLISHMENTS'; payload: Establishment[] }
-  | { type: 'SET_TEAMS'; payload: Team[] };
+  | { type: 'ADD_ESTABLISHMENT'; payload: Establishment }
+  | { type: 'UPDATE_ESTABLISHMENT'; payload: Establishment }
+  | { type: 'REMOVE_ESTABLISHMENT'; payload: string }
+  | { type: 'SET_TEAMS'; payload: Team[] }
+  | { type: 'ADD_TEAM'; payload: Team }
+  | { type: 'UPDATE_TEAM'; payload: Team }
+  | { type: 'REMOVE_TEAM'; payload: string }
+  | { type: 'REMOVE_TEAMS_BY_ESTABLISHMENT'; payload: string };
 
 const reducer = (state: OrganizationState, action: Action): OrganizationState => {
   switch (action.type) {
     case 'SET_ESTABLISHMENTS':
       return { ...state, establishments: action.payload };
+    case 'ADD_ESTABLISHMENT':
+      return { ...state, establishments: [...state.establishments, action.payload] };
+    case 'UPDATE_ESTABLISHMENT':
+      return { ...state, establishments: state.establishments.map((e) => e.id === action.payload.id ? action.payload : e) };
+    case 'REMOVE_ESTABLISHMENT':
+      return { ...state, establishments: state.establishments.filter((e) => e.id !== action.payload) };
     case 'SET_TEAMS':
       return { ...state, teams: action.payload };
+    case 'ADD_TEAM':
+      return { ...state, teams: [...state.teams, action.payload] };
+    case 'UPDATE_TEAM':
+      return { ...state, teams: state.teams.map((t) => t.id === action.payload.id ? action.payload : t) };
+    case 'REMOVE_TEAM':
+      return { ...state, teams: state.teams.filter((t) => t.id !== action.payload) };
+    case 'REMOVE_TEAMS_BY_ESTABLISHMENT':
+      return { ...state, teams: state.teams.filter((t) => t.establishmentId !== action.payload) };
     default:
       return state;
   }
@@ -31,14 +58,12 @@ interface OrganizationProviderProps {
   children: React.ReactNode;
   initialEstablishments?: Establishment[];
   initialTeams?: Team[];
-  onEmployeesChanged?: (updater: (employees: import('@/types').Employee[]) => import('@/types').Employee[]) => void;
 }
 
 export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({
   children,
   initialEstablishments,
   initialTeams,
-  onEmployeesChanged,
 }) => {
   const [state, dispatch] = useReducer(reducer, {
     establishments: initialEstablishments || [],
@@ -46,83 +71,37 @@ export const OrganizationProvider: React.FC<OrganizationProviderProps> = ({
   });
 
   const addEstablishment = useCallback(async (form: NewEstablishmentForm) => {
-    const establishment: Establishment = {
-      id: generateId(),
-      name: form.name,
-      description: form.description || '',
-    };
-    const newEstablishments = [...state.establishments, establishment];
-    await storage.setEstablishments(newEstablishments);
-    dispatch({ type: 'SET_ESTABLISHMENTS', payload: newEstablishments });
-  }, [state.establishments]);
+    const establishment = await insertEstablishment(form);
+    dispatch({ type: 'ADD_ESTABLISHMENT', payload: establishment });
+  }, []);
 
   const updateEstablishment = useCallback(async (establishment: Establishment) => {
-    const newEstablishments = state.establishments.map((e) =>
-      e.id === establishment.id ? establishment : e
-    );
-    await storage.setEstablishments(newEstablishments);
-    dispatch({ type: 'SET_ESTABLISHMENTS', payload: newEstablishments });
-  }, [state.establishments]);
+    await updateEstablishmentDb(establishment);
+    dispatch({ type: 'UPDATE_ESTABLISHMENT', payload: establishment });
+  }, []);
 
   const deleteEstablishment = useCallback(async (id: string) => {
-    const newEstablishments = state.establishments.filter((e) => e.id !== id);
-    const deletedTeamIds = state.teams
-      .filter((t) => t.establishmentId === id)
-      .map((t) => t.id);
-    const newTeams = state.teams.filter((t) => t.establishmentId !== id);
-
-    // Update employees: reset teamId for affected employees
-    if (onEmployeesChanged && deletedTeamIds.length > 0) {
-      onEmployeesChanged((employees) =>
-        employees.map((emp) =>
-          emp.teamId && deletedTeamIds.includes(emp.teamId)
-            ? { ...emp, teamId: undefined }
-            : emp
-        )
-      );
-    }
-
-    await Promise.all([
-      storage.setEstablishments(newEstablishments),
-      storage.setTeams(newTeams),
-    ]);
-    dispatch({ type: 'SET_ESTABLISHMENTS', payload: newEstablishments });
-    dispatch({ type: 'SET_TEAMS', payload: newTeams });
-  }, [state.establishments, state.teams, onEmployeesChanged]);
+    // CASCADE in DB handles teams + employee FK SET NULL automatically
+    await deleteEstablishmentDb(id);
+    dispatch({ type: 'REMOVE_ESTABLISHMENT', payload: id });
+    dispatch({ type: 'REMOVE_TEAMS_BY_ESTABLISHMENT', payload: id });
+  }, []);
 
   const addTeam = useCallback(async (form: NewTeamForm) => {
-    const team: Team = {
-      id: generateId(),
-      establishmentId: form.establishmentId,
-      name: form.name,
-      description: form.description || '',
-    };
-    const newTeams = [...state.teams, team];
-    await storage.setTeams(newTeams);
-    dispatch({ type: 'SET_TEAMS', payload: newTeams });
-  }, [state.teams]);
+    const team = await insertTeam(form);
+    dispatch({ type: 'ADD_TEAM', payload: team });
+  }, []);
 
   const updateTeam = useCallback(async (team: Team) => {
-    const newTeams = state.teams.map((t) => (t.id === team.id ? team : t));
-    await storage.setTeams(newTeams);
-    dispatch({ type: 'SET_TEAMS', payload: newTeams });
-  }, [state.teams]);
+    await updateTeamDb(team);
+    dispatch({ type: 'UPDATE_TEAM', payload: team });
+  }, []);
 
   const deleteTeam = useCallback(async (id: string) => {
-    const newTeams = state.teams.filter((t) => t.id !== id);
-
-    // Update employees: reset teamId
-    if (onEmployeesChanged) {
-      onEmployeesChanged((employees) =>
-        employees.map((emp) =>
-          emp.teamId === id ? { ...emp, teamId: undefined } : emp
-        )
-      );
-    }
-
-    await storage.setTeams(newTeams);
-    dispatch({ type: 'SET_TEAMS', payload: newTeams });
-  }, [state.teams, onEmployeesChanged]);
+    // CASCADE in DB handles employee FK SET NULL automatically
+    await deleteTeamDb(id);
+    dispatch({ type: 'REMOVE_TEAM', payload: id });
+  }, []);
 
   const value: OrganizationContextType = {
     ...state,

@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/layout';
 import { EmployeeCard } from './EmployeeCard';
 import { EmployeeForm } from './EmployeeForm';
 import { EstablishmentCard, EstablishmentForm, TeamForm } from '@/components/organization';
-import { parseEmployeesFromExcel, convertToEmployees } from '@/services/excel';
+import { parseEmployeesFromExcel } from '@/services/excel';
 import { useNavigation, useEmployees, useOrganization, useTemplates, useUser, useConfirmDialog } from '@/hooks';
 import { canEditEmployees, getEmployeesInScope } from '@/utils/permissions';
 import { ConfirmDialog } from '@/components/common';
@@ -135,8 +135,7 @@ export const EmployeeList: React.FC = () => {
     try {
       const imported = await parseEmployeesFromExcel(pendingImportFile);
       if (imported.length > 0) {
-        const newEmployees = convertToEmployees(imported);
-        await importEmployees(newEmployees, importEstablishmentId);
+        await importEmployees(imported, importEstablishmentId);
         alert(t('employees.importSuccess', { count: imported.length }));
       } else {
         alert(t('employees.noEmployeesInFile'));

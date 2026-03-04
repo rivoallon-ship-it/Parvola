@@ -1,10 +1,12 @@
 import type { AISuggestedObjective, AISuggestedTemplate, InterviewGuide, Employee, Semester, Evaluation, Position } from '@/types';
 import { AI_CONFIG, AI_INTERVIEW_GUIDE_CONFIG } from '@/constants/config';
 import { parseAIResponse } from '@/utils/helpers';
+import { supabase } from '@/lib/supabase';
 import i18n from '@/i18n';
 
 // ============================================
 // Service d'Intelligence Artificielle (Anthropic)
+// via Supabase Edge Function
 // ============================================
 
 interface AIResponse {
@@ -14,36 +16,26 @@ interface AIResponse {
 interface AIModelConfig {
   model: string;
   maxTokens: number;
-  apiKey: string;
 }
 
 /**
- * Appelle l'API Anthropic avec un prompt et une config
+ * Appelle l'API Anthropic via l'Edge Function ai-proxy
  */
 const callAnthropicAPIWithConfig = async (prompt: string, config: AIModelConfig): Promise<string> => {
-  const apiUrl = '/api/anthropic/v1/messages';
-
-  const response = await fetch(apiUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': config.apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
+  const { data, error } = await supabase.functions.invoke('ai-proxy', {
+    body: {
       model: config.model,
       max_tokens: config.maxTokens,
       messages: [{ role: 'user', content: prompt }],
-    }),
+    },
   });
 
-  if (!response.ok) {
-    const errorBody = await response.text().catch(() => '');
-    throw new Error(`API error: ${response.status} — ${errorBody}`);
+  if (error) {
+    throw new Error(`AI proxy error: ${error.message}`);
   }
 
-  const data: AIResponse = await response.json();
-  return data.content
+  const response = data as AIResponse;
+  return response.content
     ?.map((item) => (item.type === 'text' ? item.text : ''))
     .filter(Boolean)
     .join('\n') || '';

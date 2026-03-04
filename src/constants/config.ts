@@ -2,39 +2,16 @@
 // Configuration de l'application
 // ============================================
 
-// API Anthropic
+// API Anthropic — modèle par défaut (Sonnet)
 export const AI_CONFIG = {
-  apiUrl: 'https://api.anthropic.com/v1/messages',
   model: 'claude-sonnet-4-20250514',
   maxTokens: 1000,
-  // La clé API doit être configurée via les variables d'environnement
-  get apiKey(): string {
-    return import.meta.env.VITE_ANTHROPIC_API_KEY || '';
-  },
 } as const;
 
 // API Anthropic — Guide d'entretien (Haiku, plus économique)
 export const AI_INTERVIEW_GUIDE_CONFIG = {
   model: 'claude-haiku-4-5-20251001',
   maxTokens: 2000,
-  get apiKey(): string {
-    return import.meta.env.VITE_ANTHROPIC_API_KEY || '';
-  },
-} as const;
-
-// Configuration du storage
-export const STORAGE_CONFIG = {
-  mode: (import.meta.env.VITE_STORAGE_MODE || 'local') as 'local' | 'api',
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api',
-  keys: {
-    employees: 'employees',
-    semesters: 'semesters',
-    evaluations: 'evaluations',
-    positions: 'positions',
-    templates: 'templates',
-    establishments: 'establishments',
-    teams: 'teams',
-  },
 } as const;
 
 // Emojis pour les photos de profil

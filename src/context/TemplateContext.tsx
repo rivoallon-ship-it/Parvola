@@ -7,19 +7,46 @@ import type {
   NewPositionForm,
   NewTemplateForm,
 } from '@/types';
-import { storage } from '@/services/storage';
-import { generateId } from '@/utils/helpers';
+import {
+  insertPosition,
+  updatePositionDb,
+  deletePositionDb,
+  insertTemplate,
+  updateTemplateDb,
+  deleteTemplateDb,
+} from '@/services/supabase-data';
 
 type Action =
   | { type: 'SET_POSITIONS'; payload: Position[] }
-  | { type: 'SET_TEMPLATES'; payload: ObjectiveTemplate[] };
+  | { type: 'ADD_POSITION'; payload: Position }
+  | { type: 'UPDATE_POSITION'; payload: Position }
+  | { type: 'REMOVE_POSITION'; payload: string }
+  | { type: 'SET_TEMPLATES'; payload: ObjectiveTemplate[] }
+  | { type: 'ADD_TEMPLATE'; payload: ObjectiveTemplate }
+  | { type: 'UPDATE_TEMPLATE'; payload: ObjectiveTemplate }
+  | { type: 'REMOVE_TEMPLATE'; payload: string }
+  | { type: 'REMOVE_TEMPLATES_BY_POSITION'; payload: string };
 
 const reducer = (state: TemplateState, action: Action): TemplateState => {
   switch (action.type) {
     case 'SET_POSITIONS':
       return { ...state, positions: action.payload };
+    case 'ADD_POSITION':
+      return { ...state, positions: [...state.positions, action.payload] };
+    case 'UPDATE_POSITION':
+      return { ...state, positions: state.positions.map((p) => p.id === action.payload.id ? action.payload : p) };
+    case 'REMOVE_POSITION':
+      return { ...state, positions: state.positions.filter((p) => p.id !== action.payload) };
     case 'SET_TEMPLATES':
       return { ...state, templates: action.payload };
+    case 'ADD_TEMPLATE':
+      return { ...state, templates: [...state.templates, action.payload] };
+    case 'UPDATE_TEMPLATE':
+      return { ...state, templates: state.templates.map((t) => t.id === action.payload.id ? action.payload : t) };
+    case 'REMOVE_TEMPLATE':
+      return { ...state, templates: state.templates.filter((t) => t.id !== action.payload) };
+    case 'REMOVE_TEMPLATES_BY_POSITION':
+      return { ...state, templates: state.templates.filter((t) => t.positionId !== action.payload) };
     default:
       return state;
   }
@@ -44,57 +71,36 @@ export const TemplateProvider: React.FC<TemplateProviderProps> = ({
   });
 
   const addPosition = useCallback(async (form: NewPositionForm) => {
-    const position: Position = {
-      id: generateId(),
-      name: form.name,
-      description: form.description,
-    };
-    const newPositions = [...state.positions, position];
-    await storage.setPositions(newPositions);
-    dispatch({ type: 'SET_POSITIONS', payload: newPositions });
-  }, [state.positions]);
+    const position = await insertPosition(form);
+    dispatch({ type: 'ADD_POSITION', payload: position });
+  }, []);
 
   const updatePosition = useCallback(async (position: Position) => {
-    const newPositions = state.positions.map((p) => (p.id === position.id ? position : p));
-    await storage.setPositions(newPositions);
-    dispatch({ type: 'SET_POSITIONS', payload: newPositions });
-  }, [state.positions]);
+    await updatePositionDb(position);
+    dispatch({ type: 'UPDATE_POSITION', payload: position });
+  }, []);
 
   const deletePosition = useCallback(async (id: string) => {
-    const newPositions = state.positions.filter((p) => p.id !== id);
-    const newTemplates = state.templates.filter((t) => t.positionId !== id);
-    await Promise.all([
-      storage.setPositions(newPositions),
-      storage.setTemplates(newTemplates),
-    ]);
-    dispatch({ type: 'SET_POSITIONS', payload: newPositions });
-    dispatch({ type: 'SET_TEMPLATES', payload: newTemplates });
-  }, [state.positions, state.templates]);
+    // CASCADE in DB deletes templates automatically
+    await deletePositionDb(id);
+    dispatch({ type: 'REMOVE_POSITION', payload: id });
+    dispatch({ type: 'REMOVE_TEMPLATES_BY_POSITION', payload: id });
+  }, []);
 
   const addTemplate = useCallback(async (form: NewTemplateForm) => {
-    const template: ObjectiveTemplate = {
-      id: generateId(),
-      positionId: form.positionId,
-      title: form.title,
-      description: form.description,
-      suggestedDeadlineDays: form.suggestedDeadlineDays,
-    };
-    const newTemplates = [...state.templates, template];
-    await storage.setTemplates(newTemplates);
-    dispatch({ type: 'SET_TEMPLATES', payload: newTemplates });
-  }, [state.templates]);
+    const template = await insertTemplate(form);
+    dispatch({ type: 'ADD_TEMPLATE', payload: template });
+  }, []);
 
   const updateTemplate = useCallback(async (template: ObjectiveTemplate) => {
-    const newTemplates = state.templates.map((t) => (t.id === template.id ? template : t));
-    await storage.setTemplates(newTemplates);
-    dispatch({ type: 'SET_TEMPLATES', payload: newTemplates });
-  }, [state.templates]);
+    await updateTemplateDb(template);
+    dispatch({ type: 'UPDATE_TEMPLATE', payload: template });
+  }, []);
 
   const deleteTemplate = useCallback(async (id: string) => {
-    const newTemplates = state.templates.filter((t) => t.id !== id);
-    await storage.setTemplates(newTemplates);
-    dispatch({ type: 'SET_TEMPLATES', payload: newTemplates });
-  }, [state.templates]);
+    await deleteTemplateDb(id);
+    dispatch({ type: 'REMOVE_TEMPLATE', payload: id });
+  }, []);
 
   const value: TemplateContextType = {
     ...state,

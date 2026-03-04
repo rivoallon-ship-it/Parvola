@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar, Users, FileText, LayoutGrid, ClipboardList, ChevronDown } from 'lucide-react';
+import { Calendar, Users, FileText, LayoutGrid, ClipboardList, ChevronDown, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ViewType } from '@/types';
 import { colors } from '@/constants/colors';
 import { useNavigation, useUser } from '@/hooks';
 import { getNavItems } from '@/utils/permissions';
-import { SIMULATED_USERS } from '@/context/UserContext';
 
 // ============================================
 // Composant Navigation
@@ -33,7 +32,7 @@ const LANGUAGES = [
 
 export const Navigation: React.FC = () => {
   const { currentView, setCurrentView, setViewingSemester, setSelectedEmployee, setSelectedSemester } = useNavigation();
-  const { currentUser, switchUser } = useUser();
+  const { currentUser, signOut } = useUser();
   const { t, i18n } = useTranslation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -70,9 +69,9 @@ export const Navigation: React.FC = () => {
     setSelectedSemester(null);
   };
 
-  const handleSwitchUser = (userId: string) => {
-    switchUser(userId);
+  const handleSignOut = async () => {
     setShowProfileMenu(false);
+    await signOut();
   };
 
   const roleLabel = t(`user.role${currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1)}` as string);
@@ -136,36 +135,17 @@ export const Navigation: React.FC = () => {
               </button>
 
               {showProfileMenu && (
-                <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[220px]">
-                  <div className="px-3 py-2 text-xs font-semibold text-gray-400 uppercase">
-                    {t('user.switchProfile')}
+                <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[200px]">
+                  <div className="px-3 py-2 text-xs text-gray-400">
+                    {currentUser.name}
                   </div>
-                  {SIMULATED_USERS.map((user) => (
-                    <button
-                      key={user.id}
-                      onClick={() => handleSwitchUser(user.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-50 transition ${
-                        user.id === currentUser.id ? 'bg-gray-100 font-medium' : ''
-                      }`}
-                    >
-                      <span className="text-xl">{user.photo}</span>
-                      <div className="text-left flex-1">
-                        <span className="block text-gray-800">{user.name}</span>
-                        <span
-                          className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded"
-                          style={{
-                            backgroundColor: ROLE_COLORS[user.role],
-                            color: '#fff',
-                          }}
-                        >
-                          {t(`user.role${user.role.charAt(0).toUpperCase() + user.role.slice(1)}` as string)}
-                        </span>
-                      </div>
-                      {user.id === currentUser.id && (
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.nav.accent }} />
-                      )}
-                    </button>
-                  ))}
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+                  >
+                    <LogOut size={14} />
+                    {t('auth.signOutButton')}
+                  </button>
                 </div>
               )}
             </div>
