@@ -14,6 +14,18 @@ export const AI_INTERVIEW_GUIDE_CONFIG = {
   maxTokens: 2000,
 } as const;
 
+// API Anthropic — Nettoyage dictée vocale (Haiku, rapide)
+export const AI_DICTATION_CONFIG = {
+  model: 'claude-haiku-4-5-20251001',
+  maxTokens: 500,
+} as const;
+
+// API Anthropic — Revue IA pre-soumission (Sonnet, raisonnement juridique)
+export const AI_REVIEW_CONFIG = {
+  model: 'claude-sonnet-4-20250514',
+  maxTokens: 4000,
+} as const;
+
 // Emojis pour les photos de profil
 export const PROFILE_EMOJIS = [
   '👱🏻‍♀️',

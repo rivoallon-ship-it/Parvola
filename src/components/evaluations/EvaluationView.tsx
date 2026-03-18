@@ -12,15 +12,19 @@ import {
   AlertTriangle,
   Info,
   BookOpen,
+  Sparkles,
+  Shield,
+  ShieldAlert,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { AISuggestedObjective, ObjectiveTemplate, NineBoxRating } from '@/types';
-import { Card, Button, Modal, EmptyState, ConfirmDialog, Select, TextArea, EvaluationStatusBadge } from '@/components/common';
+import { Card, Button, Modal, EmptyState, ConfirmDialog, Select, TextArea, EvaluationStatusBadge, DictationButton } from '@/components/common';
 import { BackButton } from '@/components/layout';
 import { ObjectiveCard } from './ObjectiveCard';
 import { AIAssistant } from './AIAssistant';
 import { InterviewGuideModal } from './InterviewGuideModal';
-import { useNavigation, useEmployees, useSemesters, useTemplates, useConfirmDialog, useUser } from '@/hooks';
+import { AIReviewModal } from './AIReviewModal';
+import { useNavigation, useEmployees, useSemesters, useTemplates, useConfirmDialog, useUser, useToast } from '@/hooks';
 import { printExport } from '@/services/excel';
 import { colors } from '@/constants/colors';
 import { isEvaluationReadOnly } from '@/utils/helpers';
@@ -38,6 +42,7 @@ export const EvaluationView: React.FC = () => {
   const { semesters, evaluations, addObjective, addObjectiveWithData, addObjectiveFromTemplate, updateObjective, deleteObjective, reorderObjectives, duplicateObjectives, updateEvaluationBilan, updateEvaluationRatings, submitEvaluation, validateEvaluation } = useSemesters();
   const { templates, positions } = useTemplates();
   const { currentUser } = useUser();
+  const toast = useToast();
   const userRole = currentUser.role;
 
   const [showAIAssistant, setShowAIAssistant] = useState(false);
@@ -45,6 +50,8 @@ export const EvaluationView: React.FC = () => {
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [showInterviewGuide, setShowInterviewGuide] = useState(false);
+  const [showAIReview, setShowAIReview] = useState(false);
+  const [aiReviewBlocking, setAIReviewBlocking] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [navDragOverIndex, setNavDragOverIndex] = useState<number | null>(null);
   const [duplicateConfig, setDuplicateConfig] = useState({
@@ -97,6 +104,7 @@ export const EvaluationView: React.FC = () => {
   const handleSemesterChange = (semesterId: string) => {
     const semester = semesters.find((s) => s.id === semesterId);
     setSelectedSemester(semester || null);
+    setAIReviewBlocking(false);
   };
 
   const handleSubmit = () => {
@@ -104,6 +112,7 @@ export const EvaluationView: React.FC = () => {
     confirm(t('evaluation.submitConfirm'), async () => {
       await submitEvaluation(selectedEmployee.id, selectedSemester.id);
       close();
+      toast.success(t('toast.evaluationSubmitted'));
     });
   };
 
@@ -112,6 +121,7 @@ export const EvaluationView: React.FC = () => {
     confirm(t('evaluation.validateConfirm'), async () => {
       await validateEvaluation(selectedEmployee.id, selectedSemester.id);
       close();
+      toast.success(t('toast.evaluationValidated'));
     });
   };
 
@@ -127,6 +137,30 @@ export const EvaluationView: React.FC = () => {
   const handleBilanChange = async (field: 'bilanManager' | 'bilanEmployee', value: string) => {
     if (!selectedEmployee || !selectedSemester) return;
     await updateEvaluationBilan(selectedEmployee.id, selectedSemester.id, field, value);
+  };
+
+  const handleApplyCorrection = (fieldId: string, original: string, suggested: string) => {
+    if (!selectedEmployee || !selectedSemester || !currentEval) return;
+
+    if (fieldId === 'bilanManager' || fieldId === 'bilanEmployee') {
+      const currentValue = currentEval[fieldId] || '';
+      const newValue = currentValue.replace(original, suggested);
+      handleBilanChange(fieldId, newValue);
+    } else if (fieldId.startsWith('objective-')) {
+      const parts = fieldId.split('-');
+      const fieldName = parts[parts.length - 1];
+      const objId = parts.slice(1, -1).join('-');
+      const obj = currentEval.objectives.find(o => o.id === objId);
+      if (obj && (fieldName === 'title' || fieldName === 'description' || fieldName === 'evaluation' || fieldName === 'comments')) {
+        const currentValue = obj[fieldName] || '';
+        const newValue = currentValue.replace(original, suggested);
+        updateObjective(currentEval.id, objId, fieldName, newValue);
+      }
+    }
+  };
+
+  const handleReviewComplete = (unresolvedCriticalCount: number) => {
+    setAIReviewBlocking(unresolvedCriticalCount > 0);
   };
 
   const handleAddObjective = async () => {
@@ -166,13 +200,13 @@ export const EvaluationView: React.FC = () => {
       !duplicateConfig.targetSemesterId ||
       duplicateConfig.selectedObjectives.length === 0
     ) {
-      alert(t('evaluation.selectProfileAndSemester'));
+      toast.warning(t('toast.selectProfileAndSemester'));
       return;
     }
 
     await duplicateObjectives(duplicateConfig);
     setShowDuplicateModal(false);
-    alert(t('evaluation.objectivesDuplicated'));
+    toast.success(t('toast.objectivesDuplicated'));
   };
 
   const handleExport = () => {
@@ -227,10 +261,22 @@ export const EvaluationView: React.FC = () => {
               <div className="flex items-center gap-2">
                 <EvaluationStatusBadge status={evalStatus} />
                 {showSubmit && (
-                  <Button variant="primary" size="sm" onClick={handleSubmit}>
-                    <Send size={14} className="mr-1" />
-                    {t('evaluation.submit')}
-                  </Button>
+                  <>
+                    <Button variant="secondary" size="sm" onClick={() => setShowAIReview(true)}>
+                      <Shield size={14} className="mr-1" />
+                      {t('aiReview.button')}
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleSubmit}
+                      disabled={aiReviewBlocking}
+                      title={aiReviewBlocking ? t('aiReview.submitBlocked') : undefined}
+                    >
+                      <Send size={14} className="mr-1" />
+                      {t('evaluation.submit')}
+                    </Button>
+                  </>
                 )}
                 {showValidate && (
                   <Button variant="primary" size="sm" onClick={handleValidate}>
@@ -315,22 +361,48 @@ export const EvaluationView: React.FC = () => {
           <span className="text-sm font-medium text-blue-700">{t('employee.readOnlyNotice')}</span>
         </div>
       )}
+      {aiReviewBlocking && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-red-50 border-red-200">
+          <ShieldAlert size={18} className="text-red-700" />
+          <span className="text-sm font-medium text-red-700">{t('aiReview.criticalAlertBanner')}</span>
+          <Button variant="danger" size="sm" onClick={() => setShowAIReview(true)} className="ml-auto">
+            {t('aiReview.reviewAlerts')}
+          </Button>
+        </div>
+      )}
 
       {!selectedSemester ? (
         <EmptyState icon={Target} message={t('evaluation.selectSemesterHint')} />
       ) : (
         <>
+          {/* AI Interview Guide CTA */}
+          {canViewInterviewGuide(userRole) && (
+            <button
+              onClick={() => setShowInterviewGuide(true)}
+              className="w-full group relative overflow-hidden rounded-2xl border border-purple-200 bg-gradient-to-r from-purple-50 via-white to-indigo-50 p-5 text-left transition-all hover:shadow-lg hover:border-purple-300 hover:-translate-y-0.5"
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 p-3 shadow-md">
+                  <Sparkles size={22} className="text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold text-gray-900 text-sm">{t('interviewGuide.ctaTitle')}</h3>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{t('interviewGuide.ctaDescription')}</p>
+                </div>
+                <div className="flex-shrink-0 self-center">
+                  <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm group-hover:shadow-md transition-shadow">
+                    <BookOpen size={14} />
+                    {t('interviewGuide.ctaButton')}
+                  </span>
+                </div>
+              </div>
+            </button>
+          )}
+
           {/* Actions Bar */}
           <div className="flex flex-wrap gap-3 items-center justify-end">
-            {canViewInterviewGuide(userRole) && (
-              <Button
-                variant="secondary"
-                icon={<BookOpen size={18} />}
-                onClick={() => setShowInterviewGuide(true)}
-              >
-                {t('interviewGuide.button')}
-              </Button>
-            )}
             {objectives.length > 0 && (
               <>
                 {!readOnly && (
@@ -610,20 +682,42 @@ export const EvaluationView: React.FC = () => {
                     {t('evaluation.bilan')}
                   </h3>
                   <div className="space-y-4">
-                    <TextArea
-                      label={t('evaluation.managerComment')}
-                      value={currentEval?.bilanManager || ''}
-                      onChange={(e) => handleBilanChange('bilanManager', e.target.value)}
-                      placeholder={t('evaluation.managerPlaceholder')}
-                      disabled={readOnly}
-                    />
-                    <TextArea
-                      label={t('evaluation.employeeComment')}
-                      value={currentEval?.bilanEmployee || ''}
-                      onChange={(e) => handleBilanChange('bilanEmployee', e.target.value)}
-                      placeholder={t('evaluation.employeePlaceholder')}
-                      disabled={readOnly}
-                    />
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <label className="block text-sm font-medium text-gray-700">{t('evaluation.managerComment')}</label>
+                        {!readOnly && (
+                          <DictationButton
+                            onResult={(text) => handleBilanChange('bilanManager', text)}
+                            disabled={readOnly}
+                            existingText={currentEval?.bilanManager || ''}
+                          />
+                        )}
+                      </div>
+                      <TextArea
+                        value={currentEval?.bilanManager || ''}
+                        onChange={(e) => handleBilanChange('bilanManager', e.target.value)}
+                        placeholder={t('evaluation.managerPlaceholder')}
+                        disabled={readOnly}
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <label className="block text-sm font-medium text-gray-700">{t('evaluation.employeeComment')}</label>
+                        {!readOnly && (
+                          <DictationButton
+                            onResult={(text) => handleBilanChange('bilanEmployee', text)}
+                            disabled={readOnly}
+                            existingText={currentEval?.bilanEmployee || ''}
+                          />
+                        )}
+                      </div>
+                      <TextArea
+                        value={currentEval?.bilanEmployee || ''}
+                        onChange={(e) => handleBilanChange('bilanEmployee', e.target.value)}
+                        placeholder={t('evaluation.employeePlaceholder')}
+                        disabled={readOnly}
+                      />
+                    </div>
                   </div>
                 </Card>
               )}
@@ -746,6 +840,19 @@ export const EvaluationView: React.FC = () => {
         semester={selectedSemester}
         evaluation={currentEval || null}
       />
+
+      {/* AI Review Modal */}
+      {currentEval && (
+        <AIReviewModal
+          isOpen={showAIReview}
+          onClose={() => setShowAIReview(false)}
+          employee={selectedEmployee}
+          semester={selectedSemester}
+          evaluation={currentEval}
+          onApplyCorrection={handleApplyCorrection}
+          onReviewComplete={handleReviewComplete}
+        />
+      )}
 
       {/* Confirm Dialog */}
       <ConfirmDialog

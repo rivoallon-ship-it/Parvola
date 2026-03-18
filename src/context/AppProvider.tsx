@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { fetchAllData } from '@/services/supabase-data';
 import { UserProvider, useUserContext } from './UserContext';
@@ -7,7 +7,7 @@ import { EmployeeProvider } from './EmployeeContext';
 import { OrganizationProvider } from './OrganizationContext';
 import { SemesterProvider } from './SemesterContext';
 import { TemplateProvider, useTemplateContext } from './TemplateContext';
-import { LoginPage } from '@/components/auth';
+import { LoginPage, SignupPage } from '@/components/auth';
 import { colors } from '@/constants/colors';
 import type { Employee, Semester, ObjectiveTemplate, StorageData } from '@/types';
 
@@ -15,6 +15,7 @@ import type { Employee, Semester, ObjectiveTemplate, StorageData } from '@/types
 const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, isAuthLoading } = useUserContext();
   const { t } = useTranslation();
+  const [authView, setAuthView] = useState<'login' | 'signup'>('login');
 
   if (isAuthLoading) {
     return (
@@ -31,7 +32,10 @@ const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }
 
   if (!currentUser) {
-    return <LoginPage />;
+    if (authView === 'signup') {
+      return <SignupPage onSwitchToLogin={() => setAuthView('login')} />;
+    }
+    return <LoginPage onSwitchToSignup={() => setAuthView('signup')} />;
   }
 
   return <>{children}</>;
@@ -47,7 +51,7 @@ const DataLoader: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       .then(setData)
       .catch((err) => {
         console.error('Failed to load data from Supabase:', err);
-        setError(err.message);
+        setError('Une erreur est survenue lors du chargement des donnees.');
       });
   }, []);
 

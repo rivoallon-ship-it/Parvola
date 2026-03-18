@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, HelpCircle, Trophy, RefreshCw } from 'lucide-react';
+import { MessageSquare, HelpCircle, Trophy, RefreshCw, Sparkles } from 'lucide-react';
 import { Modal, Card, Button } from '@/components/common';
 import { useAIInterviewGuide } from '@/hooks';
 import { colors } from '@/constants/colors';
@@ -64,26 +64,43 @@ export const InterviewGuideModal = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title={t('interviewGuide.title')} size="xl">
-      <div className="space-y-4">
-        {/* Subtitle */}
-        <p className="text-sm text-gray-500">
-          {t('interviewGuide.subtitle', {
-            name: employee.name,
-            semester: semester?.name || '',
-          })}
-        </p>
+    <Modal isOpen={isOpen} onClose={handleClose} title="" size="xl">
+      <div className="space-y-5">
+        {/* AI-branded header */}
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 p-3 shadow-md">
+            <Sparkles size={24} className="text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">{t('interviewGuide.title')}</h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {t('interviewGuide.subtitle', {
+                name: employee.name,
+                semester: semester?.name || '',
+              })}
+            </p>
+          </div>
+        </div>
 
         {/* Loading State */}
         {isLoading && (
-          <div className="flex flex-col items-center justify-center py-16 space-y-4">
-            <div
-              className="animate-spin rounded-full h-10 w-10 border-3"
-              style={{ borderColor: `${colors.accent}30`, borderTopColor: colors.accent }}
-            />
+          <div className="flex flex-col items-center justify-center py-16 space-y-5">
+            {/* Animated AI pulse */}
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-purple-400 opacity-20 animate-ping" />
+              <div className="relative rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 p-4 shadow-lg">
+                <Sparkles size={28} className="text-white animate-pulse" />
+              </div>
+            </div>
             <div className="text-center">
-              <p className="font-medium text-gray-700">{t('interviewGuide.generating')}</p>
-              <p className="text-sm text-gray-400 mt-1">{t('interviewGuide.generatingHint')}</p>
+              <p className="font-semibold text-gray-800">{t('interviewGuide.generating')}</p>
+              <p className="text-sm text-gray-400 mt-1.5 max-w-xs">{t('interviewGuide.generatingHint')}</p>
+            </div>
+            {/* Animated dots */}
+            <div className="flex gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
           </div>
         )}
@@ -135,8 +152,8 @@ export const InterviewGuideModal = ({
               })}
             </div>
 
-            {/* Regenerate Button */}
-            <div className="flex justify-end pt-2">
+            {/* Footer: regenerate */}
+            <div className="flex items-center justify-end pt-2">
               <Button
                 variant="secondary"
                 onClick={handleRegenerate}

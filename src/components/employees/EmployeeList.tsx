@@ -8,7 +8,7 @@ import { EmployeeCard } from './EmployeeCard';
 import { EmployeeForm } from './EmployeeForm';
 import { EstablishmentCard, EstablishmentForm, TeamForm } from '@/components/organization';
 import { parseEmployeesFromExcel } from '@/services/excel';
-import { useNavigation, useEmployees, useOrganization, useTemplates, useUser, useConfirmDialog } from '@/hooks';
+import { useNavigation, useEmployees, useOrganization, useTemplates, useUser, useConfirmDialog, useToast } from '@/hooks';
 import { canEditEmployees, getEmployeesInScope } from '@/utils/permissions';
 import { ConfirmDialog } from '@/components/common';
 
@@ -24,6 +24,7 @@ export const EmployeeList: React.FC = () => {
   const { positions } = useTemplates();
   const { currentUser } = useUser();
 
+  const toast = useToast();
   const canEdit = canEditEmployees(currentUser.role);
   const employees = getEmployeesInScope(currentUser, allEmployees, teams);
 
@@ -113,7 +114,7 @@ export const EmployeeList: React.FC = () => {
     if (!file) return;
 
     if (establishments.length === 0) {
-      alert(t('employees.createEstablishmentFirst'));
+      toast.warning(t('toast.createEstablishmentFirst'));
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -136,13 +137,13 @@ export const EmployeeList: React.FC = () => {
       const imported = await parseEmployeesFromExcel(pendingImportFile);
       if (imported.length > 0) {
         await importEmployees(imported, importEstablishmentId);
-        alert(t('employees.importSuccess', { count: imported.length }));
+        toast.success(t('toast.importSuccess', { count: imported.length }));
       } else {
-        alert(t('employees.noEmployeesInFile'));
+        toast.warning(t('toast.noEmployeesInFile'));
       }
     } catch (error) {
       console.error('Import error:', error);
-      alert(t('employees.importError'));
+      toast.error(t('toast.importError'));
     }
 
     setShowImportModal(false);
@@ -165,11 +166,13 @@ export const EmployeeList: React.FC = () => {
   const handleAddEmployee = async (data: NewEmployeeForm) => {
     await addEmployee(data);
     setShowAddEmployeeForm(false);
+    toast.success(t('toast.employeeAdded'));
   };
 
   const handleUpdateEmployee = async (data: Employee) => {
     await updateEmployee(data);
     setEditingEmployee(null);
+    toast.success(t('toast.employeeUpdated'));
   };
 
   const handleDeleteEmployee = (id: string) => {
@@ -177,6 +180,7 @@ export const EmployeeList: React.FC = () => {
       await deleteEmployee(id);
       setEditingEmployee(null);
       close();
+      toast.success(t('toast.employeeDeleted'));
     });
   };
 
@@ -201,11 +205,13 @@ export const EmployeeList: React.FC = () => {
   const handleAddEstablishment = async (data: NewEstablishmentForm) => {
     await addEstablishment(data);
     setShowEstablishmentModal(false);
+    toast.success(t('toast.establishmentAdded'));
   };
 
   const handleUpdateEstablishment = async (data: Establishment) => {
     await updateEstablishment(data);
     setEditingEstablishment(null);
+    toast.success(t('toast.establishmentUpdated'));
   };
 
   const handleDeleteEstablishment = (id: string) => {
@@ -215,6 +221,7 @@ export const EmployeeList: React.FC = () => {
         await deleteEstablishment(id);
         setEditingEstablishment(null);
         close();
+        toast.success(t('toast.establishmentDeleted'));
       }
     );
   };
@@ -229,11 +236,13 @@ export const EmployeeList: React.FC = () => {
     await addTeam(data);
     setShowTeamModal(false);
     setDefaultEstablishmentIdForTeam('');
+    toast.success(t('toast.teamAdded'));
   };
 
   const handleUpdateTeam = async (data: Team) => {
     await updateTeam(data);
     setEditingTeam(null);
+    toast.success(t('toast.teamUpdated'));
   };
 
   const handleDeleteTeam = (id: string) => {
@@ -243,6 +252,7 @@ export const EmployeeList: React.FC = () => {
         await deleteTeam(id);
         setEditingTeam(null);
         close();
+        toast.success(t('toast.teamDeleted'));
       }
     );
   };

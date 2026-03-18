@@ -23,6 +23,7 @@ import type {
   DbEstablishment,
   DbTeam,
   DbEmployee,
+  DbPosition,
   DbObjectiveTemplate,
   DbSemester,
   DbEvaluation,
@@ -37,6 +38,10 @@ function throwIfError<T>(result: { data: T; error: { message: string } | null })
   if (result.error) throw new Error(result.error.message);
   if (result.data == null) throw new Error('No data returned');
   return result.data as NonNullable<T>;
+}
+
+function throwIfMutationError(result: { error: { message: string } | null }): void {
+  if (result.error) throw new Error(result.error.message);
 }
 
 // ---------- Establishments ----------
@@ -60,13 +65,13 @@ export async function insertEstablishment(form: NewEstablishmentForm): Promise<E
 }
 
 export async function updateEstablishmentDb(est: Establishment): Promise<void> {
-  throwIfError(
+  throwIfMutationError(
     await supabase.from('establishments').update({ name: est.name, description: est.description }).eq('id', est.id)
   );
 }
 
 export async function deleteEstablishmentDb(id: string): Promise<void> {
-  throwIfError(await supabase.from('establishments').delete().eq('id', id));
+  throwIfMutationError(await supabase.from('establishments').delete().eq('id', id));
 }
 
 // ---------- Teams ----------
@@ -95,7 +100,7 @@ export async function insertTeam(form: NewTeamForm): Promise<Team> {
 }
 
 export async function updateTeamDb(team: Team): Promise<void> {
-  throwIfError(
+  throwIfMutationError(
     await supabase.from('teams').update({
       establishment_id: team.establishmentId,
       name: team.name,
@@ -105,7 +110,7 @@ export async function updateTeamDb(team: Team): Promise<void> {
 }
 
 export async function deleteTeamDb(id: string): Promise<void> {
-  throwIfError(await supabase.from('teams').delete().eq('id', id));
+  throwIfMutationError(await supabase.from('teams').delete().eq('id', id));
 }
 
 // ---------- Employees ----------
@@ -115,6 +120,7 @@ const mapEmployee = (row: DbEmployee): Employee => ({
   name: row.name,
   position: row.position,
   photo: row.photo,
+  email: row.email || undefined,
   establishmentId: row.establishment_id || undefined,
   teamId: row.team_id || undefined,
   salary: row.salary || undefined,
@@ -134,6 +140,7 @@ export async function insertEmployee(form: NewEmployeeForm): Promise<Employee> {
       name: form.name,
       position: form.position,
       photo: form.photo || '👤',
+      email: form.email || null,
       establishment_id: form.establishmentId || null,
       team_id: form.teamId || null,
       salary: form.salary || null,
@@ -150,6 +157,7 @@ export async function insertEmployees(forms: Omit<Employee, 'id'>[], establishme
     name: f.name,
     position: f.position,
     photo: f.photo || '👤',
+    email: f.email || null,
     establishment_id: establishmentId || f.establishmentId || null,
     team_id: f.teamId || null,
     salary: f.salary || null,
@@ -162,11 +170,12 @@ export async function insertEmployees(forms: Omit<Employee, 'id'>[], establishme
 }
 
 export async function updateEmployeeDb(emp: Employee): Promise<void> {
-  throwIfError(
+  throwIfMutationError(
     await supabase.from('employees').update({
       name: emp.name,
       position: emp.position,
       photo: emp.photo,
+      email: emp.email || null,
       establishment_id: emp.establishmentId || null,
       team_id: emp.teamId || null,
       salary: emp.salary || null,
@@ -178,15 +187,16 @@ export async function updateEmployeeDb(emp: Employee): Promise<void> {
 }
 
 export async function deleteEmployeeDb(id: string): Promise<void> {
-  throwIfError(await supabase.from('employees').delete().eq('id', id));
+  throwIfMutationError(await supabase.from('employees').delete().eq('id', id));
 }
 
 // ---------- Positions ----------
 
-const mapPosition = (row: { id: string; name: string; description: string }): Position => ({
+const mapPosition = (row: DbPosition): Position => ({
   id: row.id,
   name: row.name,
   description: row.description,
+  role: row.role,
 });
 
 export async function fetchPositions(): Promise<Position[]> {
@@ -196,19 +206,19 @@ export async function fetchPositions(): Promise<Position[]> {
 
 export async function insertPosition(form: NewPositionForm): Promise<Position> {
   const data = throwIfError(
-    await supabase.from('positions').insert({ name: form.name, description: form.description || '' }).select().single()
+    await supabase.from('positions').insert({ name: form.name, description: form.description || '', role: form.role }).select().single()
   );
   return mapPosition(data);
 }
 
 export async function updatePositionDb(pos: Position): Promise<void> {
-  throwIfError(
-    await supabase.from('positions').update({ name: pos.name, description: pos.description }).eq('id', pos.id)
+  throwIfMutationError(
+    await supabase.from('positions').update({ name: pos.name, description: pos.description, role: pos.role }).eq('id', pos.id)
   );
 }
 
 export async function deletePositionDb(id: string): Promise<void> {
-  throwIfError(await supabase.from('positions').delete().eq('id', id));
+  throwIfMutationError(await supabase.from('positions').delete().eq('id', id));
 }
 
 // ---------- Objective Templates ----------
@@ -239,7 +249,7 @@ export async function insertTemplate(form: NewTemplateForm): Promise<ObjectiveTe
 }
 
 export async function updateTemplateDb(tmpl: ObjectiveTemplate): Promise<void> {
-  throwIfError(
+  throwIfMutationError(
     await supabase.from('objective_templates').update({
       position_id: tmpl.positionId,
       title: tmpl.title,
@@ -250,7 +260,7 @@ export async function updateTemplateDb(tmpl: ObjectiveTemplate): Promise<void> {
 }
 
 export async function deleteTemplateDb(id: string): Promise<void> {
-  throwIfError(await supabase.from('objective_templates').delete().eq('id', id));
+  throwIfMutationError(await supabase.from('objective_templates').delete().eq('id', id));
 }
 
 // ---------- Semesters ----------
@@ -284,7 +294,7 @@ export async function insertSemester(form: NewSemesterForm): Promise<Semester> {
 }
 
 export async function updateSemesterDb(sem: Semester): Promise<void> {
-  throwIfError(
+  throwIfMutationError(
     await supabase.from('semesters').update({
       year: sem.year,
       semester: sem.semester,
@@ -297,7 +307,7 @@ export async function updateSemesterDb(sem: Semester): Promise<void> {
 
 export async function deleteSemesterDb(id: string): Promise<void> {
   // CASCADE deletes evaluations + objectives automatically
-  throwIfError(await supabase.from('semesters').delete().eq('id', id));
+  throwIfMutationError(await supabase.from('semesters').delete().eq('id', id));
 }
 
 // ---------- Evaluations + Objectives ----------
@@ -365,7 +375,7 @@ export async function updateEvaluationDb(
   if (fields.bilanEmployee !== undefined) update.bilan_employee = fields.bilanEmployee;
   if (fields.performanceRating !== undefined) update.performance_rating = fields.performanceRating;
   if (fields.potentialRating !== undefined) update.potential_rating = fields.potentialRating;
-  throwIfError(await supabase.from('evaluations').update(update).eq('id', id));
+  throwIfMutationError(await supabase.from('evaluations').update(update).eq('id', id));
 }
 
 export async function insertObjectiveDb(
@@ -406,11 +416,11 @@ export async function updateObjectiveDb(
   };
   const column = columnMap[field];
   if (!column || column === 'id') return;
-  throwIfError(await supabase.from('objectives').update({ [column]: value }).eq('id', objId));
+  throwIfMutationError(await supabase.from('objectives').update({ [column]: value }).eq('id', objId));
 }
 
 export async function deleteObjectiveDb(objId: string): Promise<void> {
-  throwIfError(await supabase.from('objectives').delete().eq('id', objId));
+  throwIfMutationError(await supabase.from('objectives').delete().eq('id', objId));
 }
 
 export async function reorderObjectivesDb(evaluationId: string, objectiveIds: string[]): Promise<void> {
@@ -448,6 +458,93 @@ export async function fetchProfile(userId: string) {
     await supabase.from('profiles').select('*').eq('id', userId).single()
   );
   return data;
+}
+
+// ---------- Company ----------
+
+export async function fetchCompany(companyId: string) {
+  const data = throwIfError(
+    await supabase.from('companies').select('*').eq('id', companyId).single()
+  );
+  return {
+    id: data.id as string,
+    name: data.name as string,
+    slug: data.slug as string,
+    ownerId: data.owner_id as string,
+    logo: data.logo as string,
+  };
+}
+
+export async function updateCompany(companyId: string, updates: { name?: string; logo?: string }) {
+  const update: Record<string, unknown> = {};
+  if (updates.name !== undefined) update.name = updates.name;
+  if (updates.logo !== undefined) update.logo = updates.logo;
+  update.updated_at = new Date().toISOString();
+  throwIfMutationError(
+    await supabase.from('companies').update(update).eq('id', companyId)
+  );
+}
+
+export async function fetchCompanyMembers() {
+  // RLS ensures only same-company profiles are returned for RH users
+  const data = throwIfError(
+    await supabase.from('profiles').select('*').order('created_at')
+  );
+  return data.map((p: Record<string, unknown>) => ({
+    id: p.id as string,
+    name: p.name as string,
+    photo: p.photo as string,
+    role: p.role as string,
+    employeeId: (p.employee_id as string) || undefined,
+    createdAt: p.created_at as string,
+  }));
+}
+
+export async function updateMemberRole(userId: string, role: 'manager' | 'employee') {
+  throwIfMutationError(
+    await supabase.from('profiles').update({ role, updated_at: new Date().toISOString() }).eq('id', userId)
+  );
+}
+
+// ---------- Employee Invitation ----------
+
+export async function fetchProfileByEmployeeId(employeeId: string): Promise<{ id: string } | null> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('employee_id', employeeId)
+    .maybeSingle();
+  return data;
+}
+
+export async function sendEmployeeInvitation(
+  email: string,
+  name: string,
+  role: string,
+  employeeId: string,
+): Promise<{ userId: string }> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const res = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-user`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ email, name, role, employeeId }),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to send invitation');
+  }
+
+  const result = await res.json();
+  return { userId: result.user.id };
 }
 
 // ---------- Bulk fetch for initial load ----------

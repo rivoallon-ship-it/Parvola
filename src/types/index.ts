@@ -9,19 +9,21 @@ export type CampaignStatus = 'draft' | 'active' | 'closed';
 
 export type EvaluationStatus = 'not_started' | 'in_progress' | 'submitted' | 'validated';
 
-export type ViewType = 'semesters' | 'semester-team' | 'team' | 'templates' | 'evaluation' | 'nine-box' | 'my-evaluations';
+export type ViewType = 'semesters' | 'semester-team' | 'team' | 'templates' | 'evaluation' | 'nine-box' | 'my-evaluations' | 'settings';
 
 // ---------- Utilisateurs & Rôles ----------
-export type UserRole = 'rh' | 'manager' | 'employee';
+export type UserRole = 'admin' | 'rh' | 'directeur' | 'manager' | 'employee';
 
 export interface User {
   id: string;
   name: string;
   photo: string;
   role: UserRole;
+  companyId: string;
   employeeId?: string;
   teamIds?: string[];
   establishmentId?: string;
+  establishmentIds?: string[];
 }
 
 export interface UserState {
@@ -29,9 +31,36 @@ export interface UserState {
   isAuthLoading: boolean;
 }
 
+export interface CompanySignupForm {
+  companyName: string;
+  slug: string;
+  email: string;
+  password: string;
+  userName: string;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  slug: string;
+  ownerId: string;
+  logo: string;
+}
+
+export interface CompanyMember {
+  id: string;
+  name: string;
+  photo: string;
+  role: UserRole;
+  employeeId?: string;
+  isOwner: boolean;
+  createdAt: string;
+}
+
 export interface UserActions {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signUp: (form: CompanySignupForm) => Promise<{ companyId: string; userId: string }>;
 }
 
 export type UserContextType = UserState & UserActions;
@@ -59,6 +88,7 @@ export interface Employee {
   name: string;
   position: string;
   photo: string;
+  email?: string;
   establishmentId?: string;
   teamId?: string;
   salary?: number;
@@ -103,6 +133,7 @@ export interface Position {
   id: string;
   name: string;
   description: string;
+  role: UserRole;
 }
 
 export interface ObjectiveTemplate {
@@ -129,6 +160,7 @@ export interface NewEmployeeForm {
   name: string;
   position: string;
   photo: string;
+  email?: string;
   establishmentId?: string;
   teamId?: string;
   salary?: number;
@@ -146,6 +178,7 @@ export interface NewSemesterForm {
 export interface NewPositionForm {
   name: string;
   description: string;
+  role: UserRole;
 }
 
 export interface NewTemplateForm {
@@ -185,6 +218,36 @@ export interface InterviewGuide {
   discussionPoints: string;
   questions: string;
   semesterReview: string;
+}
+
+// ---------- IA Review ----------
+export type AIReviewSeverity = 'info' | 'warning' | 'critical';
+
+export interface AIReviewCorrection {
+  original: string;
+  suggested: string;
+  reason: string;
+}
+
+export interface AIReviewAlert {
+  severity: AIReviewSeverity;
+  excerpt: string;
+  issue: string;
+  suggestion: string;
+  legalBasis: string;
+}
+
+export interface AIReviewFieldResult {
+  fieldId: string;
+  fieldLabel: string;
+  corrections: AIReviewCorrection[];
+  suggestions: string[];
+  legalAlerts: AIReviewAlert[];
+}
+
+export interface AIReviewResult {
+  fields: AIReviewFieldResult[];
+  summary: { totalCorrections: number; totalSuggestions: number; criticalAlerts: number };
 }
 
 // ---------- Storage ----------
@@ -356,3 +419,13 @@ export interface AppActions {
 }
 
 export type AppContextType = AppState & AppActions;
+
+// ---------- Toasts ----------
+export type ToastVariant = 'success' | 'error' | 'warning' | 'info';
+
+export interface Toast {
+  id: string;
+  message: string;
+  variant: ToastVariant;
+  duration?: number;
+}

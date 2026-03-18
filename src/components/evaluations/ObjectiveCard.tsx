@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Edit2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Objective, ObjectiveStatus } from '@/types';
-import { Card, Input, TextArea, Select, StatusBadge } from '@/components/common';
+import { Card, Input, TextArea, Select, StatusBadge, DictationButton } from '@/components/common';
 import { colors } from '@/constants/colors';
 
 // ============================================
@@ -103,12 +103,20 @@ export const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
         <div className="space-y-4 pl-9">
           {/* Description */}
           {isEditing && !readOnly ? (
-            <TextArea
-              value={objective.description}
-              onChange={(e) => onUpdate('description', e.target.value)}
-              placeholder={t('objective.descriptionPlaceholder')}
-              label={t('objective.description')}
-            />
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <label className="block text-sm font-medium text-gray-700">{t('objective.description')}</label>
+                <DictationButton
+                  onResult={(text) => onUpdate('description', text)}
+                  existingText={objective.description}
+                />
+              </div>
+              <TextArea
+                value={objective.description}
+                onChange={(e) => onUpdate('description', e.target.value)}
+                placeholder={t('objective.descriptionPlaceholder')}
+              />
+            </div>
           ) : objective.description ? (
             <p className="text-gray-600">{objective.description}</p>
           ) : null}
@@ -180,12 +188,20 @@ export const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
 
           {/* Evaluation */}
           {isEditing && !readOnly ? (
-            <TextArea
-              label={t('objective.evaluation')}
-              value={objective.evaluation || ''}
-              onChange={(e) => onUpdate('evaluation', e.target.value)}
-              placeholder={t('objective.descriptionPlaceholder')}
-            />
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <label className="block text-sm font-medium text-gray-700">{t('objective.evaluation')}</label>
+                <DictationButton
+                  onResult={(text) => onUpdate('evaluation', text)}
+                  existingText={objective.evaluation || ''}
+                />
+              </div>
+              <TextArea
+                value={objective.evaluation || ''}
+                onChange={(e) => onUpdate('evaluation', e.target.value)}
+                placeholder={t('objective.descriptionPlaceholder')}
+              />
+            </div>
           ) : objective.evaluation ? (
             <div className="rounded-lg p-3" style={{ backgroundColor: `${colors.accent}10` }}>
               <p className="text-sm text-gray-700">
@@ -196,12 +212,20 @@ export const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
 
           {/* Comments */}
           {isEditing && !readOnly && (
-            <TextArea
-              label={t('objective.comments')}
-              value={objective.comments}
-              onChange={(e) => onUpdate('comments', e.target.value)}
-              placeholder={t('objective.commentsPlaceholder')}
-            />
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <label className="block text-sm font-medium text-gray-700">{t('objective.comments')}</label>
+                <DictationButton
+                  onResult={(text) => onUpdate('comments', text)}
+                  existingText={objective.comments}
+                />
+              </div>
+              <TextArea
+                value={objective.comments}
+                onChange={(e) => onUpdate('comments', e.target.value)}
+                placeholder={t('objective.commentsPlaceholder')}
+              />
+            </div>
           )}
 
           {(!isEditing || readOnly) && objective.comments && (

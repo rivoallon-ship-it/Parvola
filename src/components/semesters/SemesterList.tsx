@@ -5,7 +5,7 @@ import { Button, EmptyState, ConfirmDialog } from '@/components/common';
 import { PageHeader } from '@/components/layout';
 import { SemesterCard } from './SemesterCard';
 import { SemesterForm } from './SemesterForm';
-import { useNavigation, useSemesters, useEmployees, useUser, useConfirmDialog } from '@/hooks';
+import { useNavigation, useSemesters, useEmployees, useUser, useConfirmDialog, useToast } from '@/hooks';
 import { useOrganization } from '@/hooks';
 import { canCreateCampaign, canDeleteCampaign, canPublishCampaign as canPublish, canCloseCampaign as canClose, getEmployeesInScope } from '@/utils/permissions';
 import { colors } from '@/constants/colors';
@@ -22,6 +22,7 @@ export const SemesterList: React.FC = () => {
   const { currentUser } = useUser();
   const { teams } = useOrganization();
 
+  const toast = useToast();
   const [showAddForm, setShowAddForm] = useState(false);
   const { dialog, confirm, close } = useConfirmDialog();
 
@@ -29,8 +30,8 @@ export const SemesterList: React.FC = () => {
   const scopedEmployees = getEmployeesInScope(currentUser, employees, teams);
   const scopedEmployeeIds = new Set(scopedEmployees.map((e) => e.id));
 
-  // Manager: only show semesters that have evaluations for their employees, or active/closed campaigns
-  const visibleSemesters = role === 'manager'
+  // Manager/Directeur: only show non-draft semesters
+  const visibleSemesters = (role === 'manager' || role === 'directeur')
     ? semesters.filter((sem) => {
         if (sem.status === 'draft') return false;
         return true;
@@ -47,12 +48,14 @@ export const SemesterList: React.FC = () => {
   const handleAddSemester = async (data: { year: number; semester: 'S1' | 'S2'; closingDeadline?: string }) => {
     await addSemester(data);
     setShowAddForm(false);
+    toast.success(t('toast.semesterAdded'));
   };
 
   const handleDeleteSemester = (id: string) => {
     confirm(t('semester.deleteConfirm'), async () => {
       await deleteSemester(id);
       close();
+      toast.success(t('toast.semesterDeleted'));
     });
   };
 
@@ -60,6 +63,7 @@ export const SemesterList: React.FC = () => {
     confirm(t('campaign.publishConfirm'), async () => {
       await publishCampaign(id);
       close();
+      toast.success(t('toast.campaignPublished'));
     });
   };
 
@@ -67,6 +71,7 @@ export const SemesterList: React.FC = () => {
     confirm(t('campaign.closeConfirm'), async () => {
       await closeCampaign(id);
       close();
+      toast.success(t('toast.campaignClosed'));
     });
   };
 
@@ -110,7 +115,7 @@ export const SemesterList: React.FC = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sems.map((sem) => {
-                const semEvaluations = role === 'manager'
+                const semEvaluations = (role === 'manager' || role === 'directeur')
                   ? evaluations.filter((e) => e.semesterId === sem.id && scopedEmployeeIds.has(e.employeeId))
                   : evaluations.filter((e) => e.semesterId === sem.id);
                 return (

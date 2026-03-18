@@ -9,3 +9,5 @@ export { ProgressBar } from './ProgressBar';
 export { StatusBadge } from './StatusBadge';
 export { CampaignStatusBadge } from './CampaignStatusBadge';
 export { EvaluationStatusBadge } from './EvaluationStatusBadge';
+export { DictationButton } from './DictationButton';
+export { ToastContainer } from './Toast';

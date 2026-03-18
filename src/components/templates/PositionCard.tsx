@@ -1,11 +1,19 @@
 import React, { useState } from 'react';
 import { Briefcase, Edit2, Trash2, Plus, ChevronDown, FileText, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Position, ObjectiveTemplate, NewTemplateForm, AISuggestedTemplate } from '@/types';
+import type { Position, ObjectiveTemplate, NewTemplateForm, AISuggestedTemplate, UserRole } from '@/types';
 import { Card, Button, Input, TextArea, EmptyState } from '@/components/common';
 import { TemplateCard } from './TemplateCard';
 import { TemplateAIAssistant } from './TemplateAIAssistant';
 import { colors } from '@/constants/colors';
+
+const ROLE_COLORS: Record<UserRole, { bg: string; text: string }> = {
+  admin: { bg: '#EDE9FE', text: '#5B21B6' },
+  rh: { bg: '#DBEAFE', text: '#1E40AF' },
+  directeur: { bg: '#CFFAFE', text: '#155E75' },
+  manager: { bg: '#FEF3C7', text: '#92400E' },
+  employee: { bg: '#D1FAE5', text: '#065F46' },
+};
 
 // ============================================
 // Composant PositionCard (carte de poste avec templates)
@@ -69,9 +77,20 @@ export const PositionCard: React.FC<PositionCardProps> = ({
         <div className="flex items-center gap-3">
           <Briefcase style={{ color: colors.accent }} size={28} />
           <div>
-            <h2 className="text-2xl font-bold" style={{ color: colors.btn.primary }}>
-              {position.name}
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold" style={{ color: colors.btn.primary }}>
+                {position.name}
+              </h2>
+              <span
+                className="text-xs font-medium px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: ROLE_COLORS[position.role]?.bg || ROLE_COLORS.employee.bg,
+                  color: ROLE_COLORS[position.role]?.text || ROLE_COLORS.employee.text,
+                }}
+              >
+                {t(`user.role${position.role.charAt(0).toUpperCase()}${position.role.slice(1)}`)}
+              </span>
+            </div>
             {position.description && (
               <p className="text-sm text-gray-600 mt-1">{position.description}</p>
             )}

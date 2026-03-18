@@ -17,24 +17,32 @@ export const NineBoxView: React.FC = () => {
   const { semesters, evaluations, updateEvaluationRatings } = useSemesters();
   const { establishments, teams } = useOrganization();
   const { currentUser } = useUser();
-  const isManager = currentUser.role === 'manager';
-
   // Scope employees based on user role
   const scopedEmployees = useMemo(
     () => getEmployeesInScope(currentUser, employees, teams),
     [currentUser, employees, teams]
   );
 
-  // Scope establishments and teams for manager
+  // Scope establishments and teams based on role
   const scopedEstablishments = useMemo(() => {
-    if (!isManager) return establishments;
-    return establishments.filter((est) => est.id === currentUser.establishmentId);
-  }, [establishments, isManager, currentUser.establishmentId]);
+    if (currentUser.role === 'directeur' && currentUser.establishmentIds) {
+      return establishments.filter((est) => currentUser.establishmentIds!.includes(est.id));
+    }
+    if (currentUser.role === 'manager') {
+      return establishments.filter((est) => est.id === currentUser.establishmentId);
+    }
+    return establishments;
+  }, [establishments, currentUser]);
 
   const scopedTeams = useMemo(() => {
-    if (!isManager || !currentUser.teamIds) return teams;
-    return teams.filter((t) => currentUser.teamIds!.includes(t.id));
-  }, [teams, isManager, currentUser.teamIds]);
+    if (currentUser.role === 'directeur' && currentUser.establishmentIds) {
+      return teams.filter((t) => currentUser.establishmentIds!.includes(t.establishmentId));
+    }
+    if (currentUser.role === 'manager' && currentUser.teamIds) {
+      return teams.filter((t) => currentUser.teamIds!.includes(t.id));
+    }
+    return teams;
+  }, [teams, currentUser]);
 
   const [selectedSemesterId, setSelectedSemesterId] = useState('');
   const [selectedEstablishmentId, setSelectedEstablishmentId] = useState('');

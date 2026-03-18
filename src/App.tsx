@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { AppProvider } from '@/context';
+import { AppProvider, ToastProvider } from '@/context';
 import { useNavigation } from '@/hooks';
 import { Navigation } from '@/components/layout';
 import { EmployeeList } from '@/components/employees';
@@ -8,6 +8,7 @@ import { SemesterList, SemesterTeamView } from '@/components/semesters';
 import { EvaluationView, MyEvaluationsView } from '@/components/evaluations';
 import { TemplateList } from '@/components/templates';
 import { NineBoxView } from '@/components/nine-box';
+import { SettingsView } from '@/components/admin';
 import { colors } from '@/constants/colors';
 
 // ============================================
@@ -48,6 +49,8 @@ const AppContent: React.FC = () => {
         return <NineBoxView />;
       case 'my-evaluations':
         return <MyEvaluationsView />;
+      case 'settings':
+        return <SettingsView />;
       default:
         return <SemesterList />;
     }
@@ -63,9 +66,11 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <ToastProvider>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </ToastProvider>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar, Users, FileText, LayoutGrid, ClipboardList, ChevronDown, LogOut } from 'lucide-react';
+import { Calendar, Users, FileText, LayoutGrid, ClipboardList, Settings, ChevronDown, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ViewType } from '@/types';
 import { colors } from '@/constants/colors';
@@ -16,10 +16,13 @@ const ALL_NAV_ITEMS: Array<{ key: ViewType; icon: React.ElementType; labelKey: s
   { key: 'team', icon: Users, labelKey: 'nav.team' },
   { key: 'templates', icon: FileText, labelKey: 'nav.position' },
   { key: 'my-evaluations', icon: ClipboardList, labelKey: 'nav.myEvaluations' },
+  { key: 'settings', icon: Settings, labelKey: 'nav.settings' },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
+  admin: '#7c3aed',
   rh: '#10b981',
+  directeur: '#06b6d4',
   manager: '#3b82f6',
   employee: '#f59e0b',
 };

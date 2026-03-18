@@ -80,18 +80,26 @@ export const SemesterTeamView: React.FC = () => {
 
   // Scope: filter employees, teams and establishments based on role
   const employees = getEmployeesInScope(currentUser, allEmployees, allTeams);
+
+  // Determine scoped establishments based on role
+  const scopedEstablishmentIds = new Set(
+    currentUser.role === 'directeur' && currentUser.establishmentIds
+      ? currentUser.establishmentIds
+      : currentUser.role === 'manager' && currentUser.establishmentId
+        ? [currentUser.establishmentId]
+        : allEstablishments.map((e) => e.id)
+  );
+  const establishments = allEstablishments.filter((e) => scopedEstablishmentIds.has(e.id));
+
+  // Determine scoped teams
   const scopedTeamIds = currentUser.role === 'manager' && currentUser.teamIds
     ? new Set(currentUser.teamIds)
-    : null;
+    : currentUser.role === 'directeur'
+      ? new Set(allTeams.filter((t) => scopedEstablishmentIds.has(t.establishmentId)).map((t) => t.id))
+      : null;
   const teams = scopedTeamIds
     ? allTeams.filter((t) => scopedTeamIds.has(t.id))
     : allTeams;
-  const scopedEstablishmentIds = new Set(
-    currentUser.role === 'manager' && currentUser.establishmentId
-      ? [currentUser.establishmentId]
-      : allEstablishments.map((e) => e.id)
-  );
-  const establishments = allEstablishments.filter((e) => scopedEstablishmentIds.has(e.id));
 
   const [expandedEstablishments, setExpandedEstablishments] = useState<Set<string>>(
     new Set(establishments.map((e) => e.id))

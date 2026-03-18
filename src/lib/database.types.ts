@@ -3,7 +3,7 @@
 // Générés manuellement depuis 001_initial_schema.sql
 // ============================================
 
-export type DbUserRole = 'rh' | 'manager' | 'employee';
+export type DbUserRole = 'admin' | 'rh' | 'directeur' | 'manager' | 'employee';
 export type DbCampaignStatus = 'draft' | 'active' | 'closed';
 export type DbEvaluationStatus = 'not_started' | 'in_progress' | 'submitted' | 'validated';
 export type DbObjectiveStatus = 'not_started' | 'in_progress' | 'completed' | 'blocked';
@@ -29,6 +29,7 @@ export interface DbPosition {
   id: string;
   name: string;
   description: string;
+  role: DbUserRole;
   created_at: string;
   updated_at: string;
 }
@@ -38,6 +39,7 @@ export interface DbEmployee {
   name: string;
   position: string;
   photo: string;
+  email: string | null;
   establishment_id: string | null;
   team_id: string | null;
   salary: number | null;
@@ -102,9 +104,21 @@ export interface DbProfile {
   name: string;
   photo: string;
   role: DbUserRole;
+  company_id: string;
   employee_id: string | null;
   team_ids: string[];
   establishment_id: string | null;
+  establishment_ids: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbCompany {
+  id: string;
+  name: string;
+  slug: string;
+  owner_id: string | null;
+  logo: string;
   created_at: string;
   updated_at: string;
 }

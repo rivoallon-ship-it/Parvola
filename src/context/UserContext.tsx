@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { fetchProfile } from '@/services/supabase-data';
-import type { UserContextType, User, UserRole } from '@/types';
+import { signupCompany } from '@/services/signup';
+import type { UserContextType, User, UserRole, CompanySignupForm } from '@/types';
 
 // ============================================
 // Supabase Auth — UserContext
@@ -21,9 +22,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: profile.name,
         photo: profile.photo,
         role: profile.role as UserRole,
+        companyId: profile.company_id,
         employeeId: profile.employee_id || undefined,
         teamIds: profile.team_ids || undefined,
         establishmentId: profile.establishment_id || undefined,
+        establishmentIds: profile.establishment_ids || undefined,
       });
     } catch (err) {
       console.error('Failed to load profile:', err);
@@ -63,11 +66,22 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(null);
   }, []);
 
+  const signUp = useCallback(async (form: CompanySignupForm) => {
+    const result = await signupCompany(form);
+    // Auto sign in after signup
+    await supabase.auth.signInWithPassword({
+      email: form.email,
+      password: form.password,
+    });
+    return result;
+  }, []);
+
   const value: UserContextType = {
     currentUser,
     isAuthLoading,
     signIn,
     signOut,
+    signUp,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

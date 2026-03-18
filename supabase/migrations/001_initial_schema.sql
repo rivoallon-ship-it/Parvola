@@ -157,6 +157,7 @@ RETURNS user_role
 LANGUAGE sql
 SECURITY DEFINER
 STABLE
+SET search_path = public
 AS $$
   SELECT role FROM profiles WHERE id = auth.uid()
 $$;
@@ -166,6 +167,7 @@ RETURNS UUID[]
 LANGUAGE sql
 SECURITY DEFINER
 STABLE
+SET search_path = public
 AS $$
   SELECT COALESCE(team_ids, '{}') FROM profiles WHERE id = auth.uid()
 $$;
@@ -175,6 +177,7 @@ RETURNS UUID
 LANGUAGE sql
 SECURITY DEFINER
 STABLE
+SET search_path = public
 AS $$
   SELECT establishment_id FROM profiles WHERE id = auth.uid()
 $$;
@@ -184,6 +187,7 @@ RETURNS UUID
 LANGUAGE sql
 SECURITY DEFINER
 STABLE
+SET search_path = public
 AS $$
   SELECT employee_id FROM profiles WHERE id = auth.uid()
 $$;
@@ -212,9 +216,18 @@ CREATE POLICY "Users can read own profile"
   ON profiles FOR SELECT
   USING (id = auth.uid() OR get_user_role() = 'rh');
 
-CREATE POLICY "Users can update own profile"
+-- Users can only update their own name and photo.
+-- role, team_ids, establishment_id, employee_id are managed by RH via service_role.
+CREATE POLICY "Users can update own profile (name and photo only)"
   ON profiles FOR UPDATE
-  USING (id = auth.uid());
+  USING (id = auth.uid())
+  WITH CHECK (
+    id = auth.uid()
+    AND role = (SELECT p.role FROM profiles p WHERE p.id = auth.uid())
+    AND team_ids = (SELECT p.team_ids FROM profiles p WHERE p.id = auth.uid())
+    AND establishment_id IS NOT DISTINCT FROM (SELECT p.establishment_id FROM profiles p WHERE p.id = auth.uid())
+    AND employee_id IS NOT DISTINCT FROM (SELECT p.employee_id FROM profiles p WHERE p.id = auth.uid())
+  );
 
 -- =============================================
 -- RLS Policies — Establishments (everyone reads, RH writes)
@@ -360,11 +373,22 @@ CREATE POLICY "Manager can insert scoped evaluations"
     )
   );
 
+-- Manager can update scoped evaluations but CANNOT:
+-- - set validation_status to 'validated' (RH-only action)
+-- - reassign employee_id or semester_id
 CREATE POLICY "Manager can update scoped evaluations"
   ON evaluations FOR UPDATE TO authenticated
   USING (
     get_user_role() = 'manager' AND
     employee_id IN (
+      SELECT id FROM employees
+      WHERE team_id = ANY(get_user_team_ids())
+         OR (team_id IS NULL AND establishment_id = get_user_establishment_id())
+    )
+  )
+  WITH CHECK (
+    validation_status IS DISTINCT FROM 'validated'::evaluation_status
+    AND employee_id IN (
       SELECT id FROM employees
       WHERE team_id = ANY(get_user_team_ids())
          OR (team_id IS NULL AND establishment_id = get_user_establishment_id())

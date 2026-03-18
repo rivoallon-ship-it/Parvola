@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Plus, Briefcase } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Position, NewPositionForm, AISuggestedTemplate } from '@/types';
-import { Button, Card, Input, TextArea, EmptyState, ConfirmDialog } from '@/components/common';
+import type { Position, NewPositionForm, AISuggestedTemplate, UserRole } from '@/types';
+import { Button, Card, Input, TextArea, Select, EmptyState, ConfirmDialog } from '@/components/common';
 import { PageHeader } from '@/components/layout';
 import { PositionCard } from './PositionCard';
-import { useTemplates, useConfirmDialog } from '@/hooks';
+import { useTemplates, useConfirmDialog, useToast } from '@/hooks';
 import { useUser } from '@/hooks';
 import { canEditTemplates } from '@/utils/permissions';
 import { colors } from '@/constants/colors';
@@ -18,31 +18,43 @@ export const TemplateList: React.FC = () => {
   const { t } = useTranslation();
   const { positions, templates, addPosition, updatePosition, deletePosition, addTemplate, updateTemplate, deleteTemplate } = useTemplates();
   const { currentUser } = useUser();
+  const toast = useToast();
   const canEdit = canEditTemplates(currentUser.role);
+
+  const ROLE_OPTIONS: Array<{ value: string; label: string }> = [
+    { value: 'employee', label: t('user.roleEmployee') },
+    { value: 'manager', label: t('user.roleManager') },
+    { value: 'directeur', label: t('user.roleDirecteur') },
+    { value: 'rh', label: t('user.roleRh') },
+    { value: 'admin', label: t('user.roleAdmin') },
+  ];
 
   const [showAddPosition, setShowAddPosition] = useState(false);
   const [editingPosition, setEditingPosition] = useState<Position | null>(null);
-  const [newPosition, setNewPosition] = useState<NewPositionForm>({ name: '', description: '' });
+  const [newPosition, setNewPosition] = useState<NewPositionForm>({ name: '', description: '', role: 'employee' });
 
   const { dialog, confirm, close } = useConfirmDialog();
 
   const handleAddPosition = async () => {
     if (!newPosition.name.trim()) return;
     await addPosition(newPosition);
-    setNewPosition({ name: '', description: '' });
+    setNewPosition({ name: '', description: '', role: 'employee' });
     setShowAddPosition(false);
+    toast.success(t('toast.positionAdded'));
   };
 
   const handleUpdatePosition = async () => {
     if (!editingPosition?.name.trim()) return;
     await updatePosition(editingPosition);
     setEditingPosition(null);
+    toast.success(t('toast.positionUpdated'));
   };
 
   const handleDeletePosition = (id: string) => {
     confirm(t('templates.deletePositionConfirm'), async () => {
       await deletePosition(id);
       close();
+      toast.success(t('toast.positionDeleted'));
     });
   };
 
@@ -50,6 +62,7 @@ export const TemplateList: React.FC = () => {
     confirm(t('templates.deleteTemplateConfirm'), async () => {
       await deleteTemplate(id);
       close();
+      toast.success(t('toast.templateDeleted'));
     });
   };
 
@@ -60,6 +73,7 @@ export const TemplateList: React.FC = () => {
       description: template.description,
       suggestedDeadlineDays: template.suggestedDeadlineDays || 90,
     });
+    toast.success(t('toast.templateAdded'));
   };
 
   return (
@@ -94,6 +108,12 @@ export const TemplateList: React.FC = () => {
               value={newPosition.description}
               onChange={(e) => setNewPosition({ ...newPosition, description: e.target.value })}
             />
+            <Select
+              label={t('templates.positionRole')}
+              value={newPosition.role}
+              onChange={(e) => setNewPosition({ ...newPosition, role: e.target.value as UserRole })}
+              options={ROLE_OPTIONS}
+            />
             <div className="flex gap-3">
               <Button variant="primary" onClick={handleAddPosition}>
                 {t('common.add')}
@@ -120,6 +140,12 @@ export const TemplateList: React.FC = () => {
               onChange={(e) =>
                 setEditingPosition({ ...editingPosition, description: e.target.value })
               }
+            />
+            <Select
+              label={t('templates.positionRole')}
+              value={editingPosition.role}
+              onChange={(e) => setEditingPosition({ ...editingPosition, role: e.target.value as UserRole })}
+              options={ROLE_OPTIONS}
             />
             <div className="flex gap-3">
               <Button variant="warning" onClick={handleUpdatePosition}>

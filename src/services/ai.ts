@@ -1,5 +1,5 @@
-import type { AISuggestedObjective, AISuggestedTemplate, InterviewGuide, Employee, Semester, Evaluation, Position } from '@/types';
-import { AI_CONFIG, AI_INTERVIEW_GUIDE_CONFIG } from '@/constants/config';
+import type { AISuggestedObjective, AISuggestedTemplate, InterviewGuide, AIReviewResult, Employee, Semester, Evaluation, Position } from '@/types';
+import { AI_CONFIG, AI_INTERVIEW_GUIDE_CONFIG, AI_DICTATION_CONFIG, AI_REVIEW_CONFIG } from '@/constants/config';
 import { parseAIResponse } from '@/utils/helpers';
 import { supabase } from '@/lib/supabase';
 import i18n from '@/i18n';
@@ -229,11 +229,170 @@ ${t('interviewGuidePrompt.outputFormat')}
   }
 };
 
+/**
+ * Nettoie et reformule un texte dicté via speech-to-text
+ */
+export const cleanupDictation = async (rawText: string): Promise<string> => {
+  const prompt = `${t('dictation.cleanupPrompt')}
+
+${rawText}`;
+
+  try {
+    const cleaned = await callAnthropicAPIWithConfig(prompt, AI_DICTATION_CONFIG);
+    return cleaned.trim();
+  } catch (error) {
+    console.error('Error cleaning dictation:', error);
+    throw error;
+  }
+};
+
+/**
+ * Analyse une évaluation pour corrections, suggestions et alertes juridiques
+ */
+export const reviewEvaluation = async (
+  employee: Employee,
+  semester: Semester | null,
+  evaluation: Evaluation
+): Promise<AIReviewResult> => {
+  // Extraire tous les champs texte non-vides
+  interface FieldToReview { fieldId: string; fieldLabel: string; content: string }
+  const fields: FieldToReview[] = [];
+
+  if (evaluation.bilanManager?.trim()) {
+    fields.push({ fieldId: 'bilanManager', fieldLabel: 'Bilan Manager', content: evaluation.bilanManager });
+  }
+  if (evaluation.bilanEmployee?.trim()) {
+    fields.push({ fieldId: 'bilanEmployee', fieldLabel: 'Bilan Employé', content: evaluation.bilanEmployee });
+  }
+
+  evaluation.objectives.forEach((obj, index) => {
+    const prefix = `Objectif ${index + 1}`;
+    if (obj.title?.trim()) {
+      fields.push({ fieldId: `objective-${obj.id}-title`, fieldLabel: `${prefix} - Titre`, content: obj.title });
+    }
+    if (obj.description?.trim()) {
+      fields.push({ fieldId: `objective-${obj.id}-description`, fieldLabel: `${prefix} - Description`, content: obj.description });
+    }
+    if (obj.evaluation?.trim()) {
+      fields.push({ fieldId: `objective-${obj.id}-evaluation`, fieldLabel: `${prefix} - Évaluation`, content: obj.evaluation });
+    }
+    if (obj.comments?.trim()) {
+      fields.push({ fieldId: `objective-${obj.id}-comments`, fieldLabel: `${prefix} - Commentaires`, content: obj.comments });
+    }
+  });
+
+  if (fields.length === 0) {
+    return { fields: [], summary: { totalCorrections: 0, totalSuggestions: 0, criticalAlerts: 0 } };
+  }
+
+  const fieldsPayload = fields.map(f =>
+    `--- CHAMP: ${f.fieldLabel} (id: ${f.fieldId}) ---\n${f.content}`
+  ).join('\n\n');
+
+  const prompt = `Tu es un expert RH et juridique français spécialisé dans la conformité des entretiens d'évaluation professionnelle au regard du droit du travail français et de la jurisprudence prud'homale.
+
+CONTEXTE:
+- Collaborateur: ${employee.name}
+- Poste: ${employee.position}
+- Semestre: ${semester?.name || 'Non spécifié'}
+- Type de document: Évaluation professionnelle semestrielle
+
+CHAMPS À ANALYSER:
+${fieldsPayload}
+
+MISSION:
+Analyse chaque champ individuellement et fournis pour chacun:
+
+1. CORRECTIONS DE FORME (corrections):
+   - Fautes d'orthographe, grammaire, syntaxe
+   - Problèmes de clarté ou de formulation ambiguë
+   - Phrases trop longues ou mal structurées
+
+2. SUGGESTIONS D'AMÉLIORATION (suggestions):
+   - Rendre les commentaires plus factuels et objectifs (basés sur des faits observables)
+   - Rendre les objectifs plus mesurables et vérifiables (critères SMART)
+   - Remplacer les jugements subjectifs par des constats professionnels
+
+3. ALERTES JURIDIQUES (legalAlerts) pour le contentieux prud'homal:
+
+   a) DISCRIMINATION (Art. L1132-1 Code du travail):
+      Références directes ou indirectes à: l'âge, le sexe, l'origine, l'orientation sexuelle, la situation familiale, la grossesse, l'apparence physique, le handicap, l'état de santé, les opinions politiques, les activités syndicales, les convictions religieuses, le lieu de résidence.
+
+   b) JUGEMENTS DE VALEUR SUR LA PERSONNE (vs. le travail):
+      Jugements sur la personnalité plutôt que sur les compétences professionnelles.
+      Exemples: "personne difficile", "manque de maturité", "il est paresseux", "attitude négative".
+
+   c) FORMULATIONS VAGUES/EXPLOITABLES:
+      Expressions subjectives sans faits: "manque de motivation", "pas assez impliqué", "insuffisant", "n'est pas à la hauteur".
+
+   d) OBJECTIFS IRRÉALISTES OU NON MESURABLES:
+      Objectifs sans critère de réussite vérifiable, manifestement inatteignables, ou sans lien avec le poste (Art. L1222-1).
+
+   e) SANCTIONS DÉGUISÉES:
+      Commentaires menaçants ou ultimatums: "dernière chance", "si ça ne s'améliore pas...". Objectifs conçus pour mettre en échec.
+
+   f) ATTEINTE À LA DIGNITÉ:
+      Formulations humiliantes, infantilisantes ou dégradantes. Comparaisons nominatives avec d'autres salariés.
+
+   Pour chaque alerte, indique:
+   - severity: "critical" si risque direct aux Prud'hommes (discrimination, dignité, sanctions déguisées), "warning" si formulation à risque, "info" si amélioration recommandée
+   - legalBasis: la référence légale applicable
+
+RÈGLES:
+- Analyse chaque champ séparément avec son fieldId exact
+- N'inclus que les champs qui ont au moins un problème
+- N'invente pas de problèmes — signale uniquement les vrais risques
+- Les corrections doivent préserver le sens voulu par le manager
+- Sois pédagogique (explique POURQUOI c'est un risque)
+
+FORMAT DE SORTIE (JSON uniquement, aucun texte avant ou après):
+{
+  "fields": [
+    {
+      "fieldId": "identifiant_exact_du_champ",
+      "fieldLabel": "Libellé du champ",
+      "corrections": [
+        { "original": "texte original", "suggested": "texte corrigé", "reason": "explication" }
+      ],
+      "suggestions": ["suggestion d'amélioration"],
+      "legalAlerts": [
+        { "severity": "critical", "excerpt": "extrait problématique", "issue": "description du problème", "suggestion": "formulation alternative", "legalBasis": "référence légale" }
+      ]
+    }
+  ],
+  "summary": {
+    "totalCorrections": 0,
+    "totalSuggestions": 0,
+    "criticalAlerts": 0
+  }
+}`;
+
+  try {
+    const text = await callAnthropicAPIWithConfig(prompt, AI_REVIEW_CONFIG);
+    const cleaned = text.replace(/```json|```/g, '').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No JSON object found in AI response');
+    }
+    const parsed = JSON.parse(jsonMatch[0]) as AIReviewResult;
+
+    if (!parsed.fields || !Array.isArray(parsed.fields)) {
+      throw new Error('Invalid review structure: missing fields array');
+    }
+    return parsed;
+  } catch (error) {
+    console.error('Error reviewing evaluation:', error);
+    throw error;
+  }
+};
+
 export const aiService = {
   generateObjectives,
   generateTemplates,
   analyzeObjective,
   generateInterviewGuide,
+  cleanupDictation,
+  reviewEvaluation,
 };
 
 export default aiService;

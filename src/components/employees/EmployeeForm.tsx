@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Send, Check, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Employee, NewEmployeeForm, Team, Establishment, Position } from '@/types';
 import { Card, Button, Input, Select } from '@/components/common';
+import { useUser } from '@/hooks';
+import { canInviteUsers } from '@/utils/permissions';
+import { fetchProfileByEmployeeId, sendEmployeeInvitation } from '@/services/supabase-data';
 import { colors } from '@/constants/colors';
 
 // ============================================
@@ -32,10 +36,14 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
   isEditing = false,
 }) => {
   const { t } = useTranslation();
+  const { currentUser } = useUser();
+  const showInvite = canInviteUsers(currentUser.role);
+
   const [form, setForm] = useState<NewEmployeeForm>({
     name: employee?.name || '',
     position: employee?.position || '',
     photo: employee?.photo || '',
+    email: employee?.email || '',
     establishmentId: employee?.establishmentId || defaultEstablishmentId || '',
     teamId: employee?.teamId || '',
     salary: employee?.salary,
@@ -43,6 +51,34 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
     unjustifiedAbsences: employee?.unjustifiedAbsences,
     justifiedAbsences: employee?.justifiedAbsences,
   });
+
+  const [inviteStatus, setInviteStatus] = useState<'idle' | 'loading' | 'sent' | 'already'>('idle');
+  const [inviteError, setInviteError] = useState('');
+
+  // Check if employee already has a linked profile
+  useEffect(() => {
+    if (isEditing && employee?.id) {
+      fetchProfileByEmployeeId(employee.id).then((profile) => {
+        if (profile) setInviteStatus('already');
+      });
+    }
+  }, [isEditing, employee?.id]);
+
+  const handleSendInvite = async () => {
+    if (!employee || !form.email) return;
+    setInviteStatus('loading');
+    setInviteError('');
+    try {
+      // Derive role from position
+      const pos = positions.find((p) => p.name === form.position);
+      const role = pos?.role || 'employee';
+      await sendEmployeeInvitation(form.email, employee.name, role, employee.id);
+      setInviteStatus('sent');
+    } catch (err) {
+      setInviteError((err as Error).message);
+      setInviteStatus('idle');
+    }
+  };
 
   // Quand une équipe est sélectionnée, mettre à jour l'établissement automatiquement
   useEffect(() => {
@@ -129,6 +165,41 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
           value={form.photo}
           onChange={(e) => setForm({ ...form, photo: e.target.value })}
         />
+        <Input
+          type="email"
+          label={t('employeeForm.email')}
+          placeholder="email@example.com"
+          value={form.email || ''}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+        />
+        {/* Invite button — only in edit mode with email */}
+        {isEditing && employee && form.email && showInvite && (
+          <div className="flex items-center gap-3">
+            {inviteStatus === 'already' ? (
+              <span className="flex items-center gap-1 text-sm text-green-600">
+                <Check size={16} />
+                {t('employeeForm.alreadyInvited')}
+              </span>
+            ) : inviteStatus === 'sent' ? (
+              <span className="flex items-center gap-1 text-sm text-green-600">
+                <Check size={16} />
+                {t('employeeForm.inviteSent')}
+              </span>
+            ) : (
+              <Button
+                variant="accent"
+                icon={inviteStatus === 'loading' ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                onClick={handleSendInvite}
+                disabled={inviteStatus === 'loading'}
+              >
+                {t('employeeForm.sendInvite')}
+              </Button>
+            )}
+            {inviteError && (
+              <span className="text-sm text-red-500">{inviteError}</span>
+            )}
+          </div>
+        )}
         {establishments.length > 0 && (
           <Select
             label={t('employeeForm.establishment')}
