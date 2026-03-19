@@ -119,6 +119,7 @@ export interface DbCompany {
   slug: string;
   owner_id: string | null;
   logo: string;
+  ai_prompts: Record<string, string> | null;
   created_at: string;
   updated_at: string;
 }

@@ -12,12 +12,14 @@ import { useAITemplates } from '@/hooks';
 
 interface TemplateAIAssistantProps {
   position: Position;
+  companyContext?: string;
   onAcceptTemplate: (template: AISuggestedTemplate) => void;
   onClose: () => void;
 }
 
 export const TemplateAIAssistant: React.FC<TemplateAIAssistantProps> = ({
   position,
+  companyContext,
   onAcceptTemplate,
   onClose,
 }) => {
@@ -25,7 +27,7 @@ export const TemplateAIAssistant: React.FC<TemplateAIAssistantProps> = ({
   const { prompt, setPrompt, suggestions, isLoading, error, generate } = useAITemplates();
 
   const handleGenerate = () => {
-    generate(position);
+    generate(position, companyContext);
   };
 
   const handleAccept = (template: AISuggestedTemplate) => {

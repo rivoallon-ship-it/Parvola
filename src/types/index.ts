@@ -39,12 +39,18 @@ export interface CompanySignupForm {
   userName: string;
 }
 
+export interface AiPrompts {
+  objectivesContext?: string;
+  templatesContext?: string;
+}
+
 export interface Company {
   id: string;
   name: string;
   slug: string;
   ownerId: string;
   logo: string;
+  aiPrompts?: AiPrompts;
 }
 
 export interface CompanyMember {

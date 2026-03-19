@@ -12,7 +12,7 @@ interface UseAIObjectivesReturn {
   suggestions: AISuggestedObjective[];
   isLoading: boolean;
   error: string | null;
-  generate: (employee: Employee, semester: Semester | null) => Promise<void>;
+  generate: (employee: Employee, semester: Semester | null, companyContext?: string) => Promise<void>;
   reset: () => void;
 }
 
@@ -22,7 +22,7 @@ export const useAIObjectives = (): UseAIObjectivesReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const generate = useCallback(async (employee: Employee, semester: Semester | null) => {
+  const generate = useCallback(async (employee: Employee, semester: Semester | null, companyContext?: string) => {
     if (!prompt.trim()) return;
 
     setIsLoading(true);
@@ -30,7 +30,7 @@ export const useAIObjectives = (): UseAIObjectivesReturn => {
     setSuggestions([]);
 
     try {
-      const results = await generateObjectives(employee, semester, prompt);
+      const results = await generateObjectives(employee, semester, prompt, companyContext);
       if (results.length > 0) {
         setSuggestions(results);
       } else {
@@ -67,7 +67,7 @@ interface UseAITemplatesReturn {
   suggestions: AISuggestedTemplate[];
   isLoading: boolean;
   error: string | null;
-  generate: (position: Position) => Promise<void>;
+  generate: (position: Position, companyContext?: string) => Promise<void>;
   reset: () => void;
 }
 
@@ -77,7 +77,7 @@ export const useAITemplates = (): UseAITemplatesReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const generate = useCallback(async (position: Position) => {
+  const generate = useCallback(async (position: Position, companyContext?: string) => {
     if (!prompt.trim()) return;
 
     setIsLoading(true);
@@ -85,7 +85,7 @@ export const useAITemplates = (): UseAITemplatesReturn => {
     setSuggestions([]);
 
     try {
-      const results = await generateTemplates(position, prompt);
+      const results = await generateTemplates(position, prompt, companyContext);
       if (results.length > 0) {
         setSuggestions(results);
       } else {

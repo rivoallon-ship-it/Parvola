@@ -13,6 +13,7 @@ import { useAIObjectives } from '@/hooks';
 interface AIAssistantProps {
   employee: Employee;
   semester: Semester | null;
+  companyContext?: string;
   onAcceptObjective: (objective: AISuggestedObjective) => void;
   onClose: () => void;
 }
@@ -20,6 +21,7 @@ interface AIAssistantProps {
 export const AIAssistant: React.FC<AIAssistantProps> = ({
   employee,
   semester,
+  companyContext,
   onAcceptObjective,
   onClose,
 }) => {
@@ -27,7 +29,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   const { prompt, setPrompt, suggestions, isLoading, error, generate, reset } = useAIObjectives();
 
   const handleGenerate = () => {
-    generate(employee, semester);
+    generate(employee, semester, companyContext);
   };
 
   const handleAccept = (objective: AISuggestedObjective) => {

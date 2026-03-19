@@ -56,7 +56,8 @@ const t = (key: string) => i18n.t(key);
 export const generateObjectives = async (
   employee: Employee,
   semester: Semester | null,
-  userPrompt: string
+  userPrompt: string,
+  companyContext?: string
 ): Promise<AISuggestedObjective[]> => {
   const prompt = `${t('aiPrompt.systemRole')}
 
@@ -64,7 +65,7 @@ ${t('aiPrompt.context')}
 - ${t('aiPrompt.employee')} ${employee.name}
 - ${t('aiPrompt.position')} ${employee.position}
 - ${t('aiPrompt.semester')} ${semester?.name || t('aiPrompt.notSpecified')}
-
+${companyContext ? `\n${t('aiPrompt.companyContext')}\n${companyContext}\n` : ''}
 ${t('aiPrompt.userRequest')} ${userPrompt}
 
 ${t('aiPrompt.instructions')}
@@ -95,14 +96,15 @@ ${t('aiPrompt.outputFormat')}
  */
 export const generateTemplates = async (
   position: Position,
-  userPrompt: string
+  userPrompt: string,
+  companyContext?: string
 ): Promise<AISuggestedTemplate[]> => {
   const prompt = `${t('aiPrompt.systemRole')}
 
 ${t('aiPrompt.context')}
 - ${t('aiPrompt.position')} ${position.name}
 - ${t('aiPrompt.positionDescription')} ${position.description || t('aiPrompt.notSpecifiedFeminine')}
-
+${companyContext ? `\n${t('aiPrompt.companyContext')}\n${companyContext}\n` : ''}
 ${t('aiPrompt.userRequest')} ${userPrompt}
 
 ${t('aiPrompt.instructions')}

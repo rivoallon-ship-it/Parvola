@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Plus,
   Target,
@@ -26,6 +26,8 @@ import { InterviewGuideModal } from './InterviewGuideModal';
 import { AIReviewModal } from './AIReviewModal';
 import { useNavigation, useEmployees, useSemesters, useTemplates, useConfirmDialog, useUser, useToast } from '@/hooks';
 import { printExport } from '@/services/excel';
+import { fetchCompany } from '@/services/supabase-data';
+import type { Company } from '@/types';
 import { colors } from '@/constants/colors';
 import { isEvaluationReadOnly } from '@/utils/helpers';
 import { canSubmitEvaluation, canValidateEvaluation, canViewNineBoxRatings, canViewBilanManager, canViewInterviewGuide } from '@/utils/permissions';
@@ -44,6 +46,14 @@ export const EvaluationView: React.FC = () => {
   const { currentUser } = useUser();
   const toast = useToast();
   const userRole = currentUser.role;
+
+  const [company, setCompany] = useState<Company | null>(null);
+
+  useEffect(() => {
+    if (currentUser.companyId) {
+      fetchCompany(currentUser.companyId).then(setCompany);
+    }
+  }, [currentUser.companyId]);
 
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [showAddMenu, setShowAddMenu] = useState(false);
@@ -491,6 +501,7 @@ export const EvaluationView: React.FC = () => {
             <AIAssistant
               employee={selectedEmployee}
               semester={selectedSemester}
+              companyContext={company?.aiPrompts?.objectivesContext}
               onAcceptObjective={handleAcceptAISuggestion}
               onClose={() => setShowAIAssistant(false)}
             />

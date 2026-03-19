@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Briefcase, Edit2, Trash2, Plus, ChevronDown, FileText, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Position, ObjectiveTemplate, NewTemplateForm, AISuggestedTemplate, UserRole } from '@/types';
+import type { Position, ObjectiveTemplate, NewTemplateForm, AISuggestedTemplate, UserRole, AiPrompts } from '@/types';
 import { Card, Button, Input, TextArea, EmptyState } from '@/components/common';
 import { TemplateCard } from './TemplateCard';
 import { TemplateAIAssistant } from './TemplateAIAssistant';
@@ -22,6 +22,7 @@ const ROLE_COLORS: Record<UserRole, { bg: string; text: string }> = {
 interface PositionCardProps {
   position: Position;
   templates: ObjectiveTemplate[];
+  companyAiPrompts?: AiPrompts;
   onEdit?: () => void;
   onDelete?: () => void;
   onAddTemplate?: (template: NewTemplateForm) => void;
@@ -33,6 +34,7 @@ interface PositionCardProps {
 export const PositionCard: React.FC<PositionCardProps> = ({
   position,
   templates,
+  companyAiPrompts,
   onEdit,
   onDelete,
   onAddTemplate,
@@ -168,6 +170,7 @@ export const PositionCard: React.FC<PositionCardProps> = ({
       {onAddTemplate && showAIAssistant && (
         <TemplateAIAssistant
           position={position}
+          companyContext={companyAiPrompts?.templatesContext}
           onAcceptTemplate={onAcceptAITemplate!}
           onClose={() => setShowAIAssistant(false)}
         />

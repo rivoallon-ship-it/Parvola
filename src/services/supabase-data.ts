@@ -466,19 +466,25 @@ export async function fetchCompany(companyId: string) {
   const data = throwIfError(
     await supabase.from('companies').select('*').eq('id', companyId).single()
   );
+  const aiPromptsRaw = data.ai_prompts as Record<string, string> | null;
   return {
     id: data.id as string,
     name: data.name as string,
     slug: data.slug as string,
     ownerId: data.owner_id as string,
     logo: data.logo as string,
+    aiPrompts: aiPromptsRaw ? {
+      objectivesContext: aiPromptsRaw.objectivesContext,
+      templatesContext: aiPromptsRaw.templatesContext,
+    } : undefined,
   };
 }
 
-export async function updateCompany(companyId: string, updates: { name?: string; logo?: string }) {
+export async function updateCompany(companyId: string, updates: { name?: string; logo?: string; aiPrompts?: { objectivesContext?: string; templatesContext?: string } }) {
   const update: Record<string, unknown> = {};
   if (updates.name !== undefined) update.name = updates.name;
   if (updates.logo !== undefined) update.logo = updates.logo;
+  if (updates.aiPrompts !== undefined) update.ai_prompts = updates.aiPrompts;
   update.updated_at = new Date().toISOString();
   throwIfMutationError(
     await supabase.from('companies').update(update).eq('id', companyId)

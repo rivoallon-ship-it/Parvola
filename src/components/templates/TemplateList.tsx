@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Briefcase } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Position, NewPositionForm, AISuggestedTemplate, UserRole } from '@/types';
+import type { Position, NewPositionForm, AISuggestedTemplate, UserRole, Company } from '@/types';
 import { Button, Card, Input, TextArea, Select, EmptyState, ConfirmDialog } from '@/components/common';
 import { PageHeader } from '@/components/layout';
 import { PositionCard } from './PositionCard';
 import { useTemplates, useConfirmDialog, useToast } from '@/hooks';
 import { useUser } from '@/hooks';
 import { canEditTemplates } from '@/utils/permissions';
+import { fetchCompany } from '@/services/supabase-data';
 import { colors } from '@/constants/colors';
 
 // ============================================
@@ -20,6 +21,14 @@ export const TemplateList: React.FC = () => {
   const { currentUser } = useUser();
   const toast = useToast();
   const canEdit = canEditTemplates(currentUser.role);
+
+  const [company, setCompany] = useState<Company | null>(null);
+
+  useEffect(() => {
+    if (currentUser.companyId) {
+      fetchCompany(currentUser.companyId).then(setCompany);
+    }
+  }, [currentUser.companyId]);
 
   const ROLE_OPTIONS: Array<{ value: string; label: string }> = [
     { value: 'employee', label: t('user.roleEmployee') },
@@ -166,6 +175,7 @@ export const TemplateList: React.FC = () => {
             key={pos.id}
             position={pos}
             templates={templates.filter((t) => t.positionId === pos.id)}
+            companyAiPrompts={company?.aiPrompts}
             onEdit={canEdit ? () => setEditingPosition({ ...pos }) : undefined}
             onDelete={canEdit ? () => handleDeletePosition(pos.id) : undefined}
             onAddTemplate={canEdit ? (tmpl) => addTemplate(tmpl) : undefined}
