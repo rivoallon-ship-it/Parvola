@@ -99,8 +99,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToSignup }) => {
             </Button>
           </form>
 
-          {/* Demo credentials */}
-          <div className="mt-6 pt-4 border-t border-gray-100">
+          {/* Demo credentials — only in dev */}
+          {import.meta.env.DEV && (
+            <div className="mt-6 pt-4 border-t border-gray-100">
               <p className="text-xs text-gray-400 text-center mb-2">{t('auth.demoHint')}</p>
               <div className="grid grid-cols-3 gap-2 text-xs text-center">
                 <button
@@ -129,6 +130,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToSignup }) => {
                 </button>
               </div>
             </div>
+          )}
 
           {/* Switch to signup */}
           {onSwitchToSignup && (

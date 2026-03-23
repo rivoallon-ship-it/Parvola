@@ -13,27 +13,52 @@ export interface ImportedEmployee {
   photo: string;
 }
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_ROWS = 5000;
+const ALLOWED_EXTENSIONS = ['.xlsx', '.xls', '.csv'];
+
 /**
  * Parse un fichier Excel et extrait les employés
  * Format attendu: Colonne A = Prénom, Colonne B = Nom, Colonne D = Poste
  */
 export const parseEmployeesFromExcel = async (file: File): Promise<ImportedEmployee[]> => {
+  // Validate file size
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error('File too large (max 5 MB)');
+  }
+
+  // Validate file extension
+  const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    throw new Error('Invalid file type. Accepted: .xlsx, .xls, .csv');
+  }
+
   const data = await file.arrayBuffer();
   const workbook = XLSX.read(data, { type: 'array' });
   const sheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[sheetName];
   const jsonData = XLSX.utils.sheet_to_json<string[]>(worksheet, { header: 1 });
 
+  if (jsonData.length > MAX_ROWS) {
+    throw new Error(`Too many rows (max ${MAX_ROWS})`);
+  }
+
   const employees: ImportedEmployee[] = [];
+
+  // Sanitize cell: strip leading formula characters
+  const sanitizeCell = (val: unknown): string => {
+    const s = val ? String(val).trim() : '';
+    return s.replace(/^[=+\-@]/, '');
+  };
 
   // Skip header row (index 0)
   for (let i = 1; i < jsonData.length; i++) {
     const row = jsonData[i];
     if (!row || row.length === 0) continue;
 
-    const col1 = row[0] ? String(row[0]).trim() : '';
-    const col2 = row[1] ? String(row[1]).trim() : '';
-    const col4 = row[3] ? String(row[3]).trim() : '';
+    const col1 = sanitizeCell(row[0]);
+    const col2 = sanitizeCell(row[1]);
+    const col4 = sanitizeCell(row[3]);
 
     const fullName = [col1, col2].filter(Boolean).join(' ').trim();
 
@@ -62,6 +87,15 @@ export interface ExportData {
 
 const t = (key: string) => i18n.t(key);
 
+/** Escape user-provided strings before inserting them into HTML */
+const escapeHtml = (str: string): string =>
+  str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 export const generateExportHTML = (data: ExportData): string => {
   const { employee, semester, objectives, bilanManager, bilanEmployee } = data;
 
@@ -71,18 +105,18 @@ export const generateExportHTML = (data: ExportData): string => {
     <div class="objective">
       <div class="objective-header">
         <span class="objective-number">${index + 1}.</span>
-        <h3>${obj.title || t('common.noTitle')}</h3>
-        <span class="status ${obj.status}">${getStatusLabel(obj.status)}</span>
+        <h3>${escapeHtml(obj.title || t('common.noTitle'))}</h3>
+        <span class="status ${escapeHtml(obj.status)}">${escapeHtml(getStatusLabel(obj.status))}</span>
       </div>
-      ${obj.description ? `<p class="description">${obj.description}</p>` : ''}
+      ${obj.description ? `<p class="description">${escapeHtml(obj.description)}</p>` : ''}
       <div class="progress-section">
-        <span>${t('excel.progression')} ${obj.progress}%</span>
+        <span>${t('excel.progression')} ${Number(obj.progress)}%</span>
         <div class="progress-bar">
-          <div class="progress-fill" style="width: ${obj.progress}%"></div>
+          <div class="progress-fill" style="width: ${Number(obj.progress)}%"></div>
         </div>
       </div>
-      ${obj.deadline ? `<p class="deadline">${t('excel.deadline')} ${obj.deadline}</p>` : ''}
-      ${obj.comments ? `<p class="comments">${t('excel.comments')} ${obj.comments}</p>` : ''}
+      ${obj.deadline ? `<p class="deadline">${t('excel.deadline')} ${escapeHtml(obj.deadline)}</p>` : ''}
+      ${obj.comments ? `<p class="comments">${t('excel.comments')} ${escapeHtml(obj.comments)}</p>` : ''}
     </div>
   `
     )
@@ -94,13 +128,13 @@ export const generateExportHTML = (data: ExportData): string => {
       ${bilanManager ? `
         <div class="bilan-block">
           <h4>${t('excel.managerComment')}</h4>
-          <p>${bilanManager}</p>
+          <p>${escapeHtml(bilanManager)}</p>
         </div>
       ` : ''}
       ${bilanEmployee ? `
         <div class="bilan-block">
           <h4>${t('excel.employeeComment')}</h4>
-          <p>${bilanEmployee}</p>
+          <p>${escapeHtml(bilanEmployee)}</p>
         </div>
       ` : ''}
     </div>
@@ -128,7 +162,7 @@ export const generateExportHTML = (data: ExportData): string => {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>${t('excel.evaluation')} - ${employee.name} - ${semester.name}</title>
+      <title>${t('excel.evaluation')} - ${escapeHtml(employee.name)} - ${escapeHtml(semester.name)}</title>
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
@@ -278,13 +312,13 @@ export const generateExportHTML = (data: ExportData): string => {
     <body>
       <div class="header">
         <div class="employee-info">
-          <span class="employee-photo">${employee.photo}</span>
+          <span class="employee-photo">${escapeHtml(employee.photo)}</span>
           <div>
-            <h1>${employee.name}</h1>
-            <p class="subtitle">${employee.position}</p>
+            <h1>${escapeHtml(employee.name)}</h1>
+            <p class="subtitle">${escapeHtml(employee.position)}</p>
           </div>
         </div>
-        <p class="subtitle">${t('excel.evaluation')} ${semester.name}</p>
+        <p class="subtitle">${t('excel.evaluation')} ${escapeHtml(semester.name)}</p>
       </div>
 
       <h2>${t('excel.objectives')} (${objectives.length})</h2>

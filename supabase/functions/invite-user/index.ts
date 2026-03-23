@@ -9,9 +9,11 @@ const ALLOWED_ORIGINS = [
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get("Origin") || "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  if (!ALLOWED_ORIGINS.includes(origin)) {
+    return null; // Origin not allowed
+  }
   return {
-    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   };
 }
@@ -52,6 +54,10 @@ function checkRateLimit(userId: string): boolean {
 
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);
+
+  if (!cors) {
+    return new Response("Forbidden", { status: 403 });
+  }
 
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: cors });

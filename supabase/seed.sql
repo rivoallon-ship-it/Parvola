@@ -1,11 +1,11 @@
 -- =============================================
 -- Talent Review — Seed Data (Sushi Neko demo)
 -- =============================================
--- Demo credentials:
---   sophie@sushineko.fr  / password123 (Admin)
---   thomas@sushineko.fr  / password123 (Directeur — Lyon + Bordeaux)
---   kenji@sushineko.fr   / password123 (Manager)
---   maxime@sushineko.fr  / password123 (Employee)
+-- Demo accounts (password set via crypt below):
+--   sophie@sushineko.fr  (Admin)
+--   thomas@sushineko.fr  (Directeur)
+--   kenji@sushineko.fr   (Manager)
+--   maxime@sushineko.fr  (Employee)
 -- =============================================
 
 -- =============================================

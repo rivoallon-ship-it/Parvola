@@ -183,7 +183,6 @@ ${t('interviewGuidePrompt.context')}
 - ${t('interviewGuidePrompt.employee')} ${employee.name}
 - ${t('interviewGuidePrompt.position')} ${employee.position}
 - ${t('interviewGuidePrompt.semester')} ${semester?.name || t('aiPrompt.notSpecified')}
-- ${t('interviewGuidePrompt.salary')} ${employee.salary !== undefined ? `${employee.salary.toLocaleString('fr-FR')} EUR` : t('aiPrompt.notSpecified')}
 - ${t('interviewGuidePrompt.lateCount')} ${employee.lateCount ?? t('aiPrompt.notSpecified')}
 - ${t('interviewGuidePrompt.unjustifiedAbsences')} ${employee.unjustifiedAbsences ?? t('aiPrompt.notSpecified')}
 - ${t('interviewGuidePrompt.justifiedAbsences')} ${employee.justifiedAbsences ?? t('aiPrompt.notSpecified')}
