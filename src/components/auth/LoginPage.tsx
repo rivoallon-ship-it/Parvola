@@ -99,38 +99,36 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToSignup }) => {
             </Button>
           </form>
 
-          {/* Demo credentials — only in dev */}
-          {import.meta.env.DEV && (
-            <div className="mt-6 pt-4 border-t border-gray-100">
-              <p className="text-xs text-gray-400 text-center mb-2">{t('auth.demoHint')}</p>
-              <div className="grid grid-cols-3 gap-2 text-xs text-center">
-                <button
-                  type="button"
-                  onClick={() => { setEmail('sophie@sushineko.fr'); setPassword('password123'); }}
-                  className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition"
-                >
-                  <span className="block text-lg mb-0.5">👱🏾‍♀️</span>
-                  <span className="text-gray-600 font-medium">RH</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setEmail('kenji@sushineko.fr'); setPassword('password123'); }}
-                  className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition"
-                >
-                  <span className="block text-lg mb-0.5">👨🏻</span>
-                  <span className="text-gray-600 font-medium">Manager</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setEmail('maxime@sushineko.fr'); setPassword('password123'); }}
-                  className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition"
-                >
-                  <span className="block text-lg mb-0.5">👨🏻‍🦰</span>
-                  <span className="text-gray-600 font-medium">Employee</span>
-                </button>
-              </div>
+          {/* Demo credentials */}
+          <div className="mt-6 pt-4 border-t border-gray-100">
+            <p className="text-xs text-gray-400 text-center mb-2">{t('auth.demoHint')}</p>
+            <div className="grid grid-cols-3 gap-2 text-xs text-center">
+              <button
+                type="button"
+                onClick={() => { setEmail('sophie@sushineko.fr'); setPassword('password123'); }}
+                className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition"
+              >
+                <span className="block text-lg mb-0.5">👱🏾‍♀️</span>
+                <span className="text-gray-600 font-medium">RH</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setEmail('kenji@sushineko.fr'); setPassword('password123'); }}
+                className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition"
+              >
+                <span className="block text-lg mb-0.5">👨🏻</span>
+                <span className="text-gray-600 font-medium">Manager</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setEmail('maxime@sushineko.fr'); setPassword('password123'); }}
+                className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition"
+              >
+                <span className="block text-lg mb-0.5">👨🏻‍🦰</span>
+                <span className="text-gray-600 font-medium">Employee</span>
+              </button>
             </div>
-          )}
+          </div>
 
           {/* Switch to signup */}
           {onSwitchToSignup && (

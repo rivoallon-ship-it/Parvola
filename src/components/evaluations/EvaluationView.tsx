@@ -30,7 +30,7 @@ import { fetchCompany } from '@/services/supabase-data';
 import type { Company } from '@/types';
 import { colors } from '@/constants/colors';
 import { isEvaluationReadOnly } from '@/utils/helpers';
-import { canSubmitEvaluation, canValidateEvaluation, canViewNineBoxRatings, canViewBilanManager, canViewInterviewGuide } from '@/utils/permissions';
+import { canSubmitEvaluation, canValidateEvaluation, canViewNineBoxRatings, canViewBilanManager, canViewInterviewGuide, isEvaluator } from '@/utils/permissions';
 import { NINE_BOX_CONFIG } from '@/constants/config';
 
 // ============================================
@@ -87,6 +87,7 @@ export const EvaluationView: React.FC = () => {
   const readOnly = isEmployee || isEvaluationReadOnly(campaignStatus, evalStatus);
   const showSubmit = canSubmitEvaluation(userRole, campaignStatus, evalStatus);
   const showValidate = canValidateEvaluation(userRole, campaignStatus, evalStatus);
+  const showAIReviewButton = isEvaluator(userRole) && campaignStatus === 'active' && (evalStatus === 'in_progress' || evalStatus === 'submitted');
   const showNineBox = canViewNineBoxRatings(userRole);
   const showBilan = canViewBilanManager(userRole);
 
@@ -270,23 +271,23 @@ export const EvaluationView: React.FC = () => {
             {selectedSemester && (
               <div className="flex items-center gap-2">
                 <EvaluationStatusBadge status={evalStatus} />
+                {showAIReviewButton && (
+                  <Button variant="secondary" size="sm" onClick={() => setShowAIReview(true)}>
+                    <Shield size={14} className="mr-1" />
+                    {t('aiReview.button')}
+                  </Button>
+                )}
                 {showSubmit && (
-                  <>
-                    <Button variant="secondary" size="sm" onClick={() => setShowAIReview(true)}>
-                      <Shield size={14} className="mr-1" />
-                      {t('aiReview.button')}
-                    </Button>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={handleSubmit}
-                      disabled={aiReviewBlocking}
-                      title={aiReviewBlocking ? t('aiReview.submitBlocked') : undefined}
-                    >
-                      <Send size={14} className="mr-1" />
-                      {t('evaluation.submit')}
-                    </Button>
-                  </>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleSubmit}
+                    disabled={aiReviewBlocking}
+                    title={aiReviewBlocking ? t('aiReview.submitBlocked') : undefined}
+                  >
+                    <Send size={14} className="mr-1" />
+                    {t('evaluation.submit')}
+                  </Button>
                 )}
                 {showValidate && (
                   <Button variant="primary" size="sm" onClick={handleValidate}>

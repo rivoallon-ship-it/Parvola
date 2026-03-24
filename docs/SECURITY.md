@@ -137,7 +137,7 @@ const escapeHtml = (str: string): string =>
 Désactivés en production (`sourcemap: false` dans `vite.config.ts`).
 
 ### 6.4 Boutons de démo
-Les boutons de connexion rapide (avec emails/mots de passe de démo) sont masqués en production via `import.meta.env.DEV`.
+Les boutons de connexion rapide (avec emails/mots de passe de démo) sont affichés en permanence pour faciliter les démonstrations. Les mots de passe de démo sont des comptes de test uniquement.
 
 ---
 

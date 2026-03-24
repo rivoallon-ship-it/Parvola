@@ -35,7 +35,7 @@ Audit de sécurité complet et corrections appliquées sur l'ensemble de l'appli
 - Désactivés en production (`sourcemap: false` dans `vite.config.ts`) pour empêcher l'exposition du code source.
 
 #### Boutons de démo
-- Les boutons de connexion rapide (demo credentials) sont désormais masqués en production via `import.meta.env.DEV`.
+- Les boutons de connexion rapide (demo credentials) restent visibles pour faciliter les démonstrations.
 - Fichier : `src/components/auth/LoginPage.tsx`
 
 #### Base de données
