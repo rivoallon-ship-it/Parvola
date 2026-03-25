@@ -4,7 +4,7 @@
 
 // API Anthropic — modèle par défaut (Sonnet)
 export const AI_CONFIG = {
-  model: 'claude-sonnet-4-20250514',
+  model: 'claude-sonnet-4-6',
   maxTokens: 1000,
 } as const;
 
@@ -22,7 +22,7 @@ export const AI_DICTATION_CONFIG = {
 
 // API Anthropic — Revue IA pre-soumission (Sonnet, raisonnement juridique)
 export const AI_REVIEW_CONFIG = {
-  model: 'claude-sonnet-4-20250514',
+  model: 'claude-sonnet-4-6',
   maxTokens: 4000,
 } as const;
 

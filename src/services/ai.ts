@@ -31,7 +31,9 @@ const callAnthropicAPIWithConfig = async (prompt: string, config: AIModelConfig)
   });
 
   if (error) {
-    throw new Error(`AI proxy error: ${error.message}`);
+    // Extract detailed error from response body when available
+    const detail = data?.error || '';
+    throw new Error(`AI proxy error: ${error.message}${detail ? ` — ${detail}` : ''}`);
   }
 
   const response = data as AIResponse;

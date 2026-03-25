@@ -11,7 +11,7 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 
 // Security: only allow specific models and cap tokens
 const ALLOWED_MODELS = [
-  'claude-sonnet-4-20250514',
+  'claude-sonnet-4-6',
   'claude-haiku-4-5-20251001',
 ];
 const MAX_TOKENS_LIMIT = 4000;
