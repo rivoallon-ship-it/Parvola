@@ -9,6 +9,12 @@ export type CampaignStatus = 'draft' | 'active' | 'closed';
 
 export type EvaluationStatus = 'not_started' | 'in_progress' | 'submitted' | 'validated';
 
+export type ProfessionalCampaignStatus = 'draft' | 'active' | 'closed';
+
+export type ProfessionalInterviewStatus = 'scheduled' | 'in_progress' | 'completed';
+
+export type MobilityWish = 'none' | 'internal' | 'external' | 'geographic';
+
 export type ViewType = 'semesters' | 'semester-team' | 'team' | 'templates' | 'evaluation' | 'nine-box' | 'my-evaluations' | 'settings';
 
 // ---------- Utilisateurs & Rôles ----------
@@ -256,8 +262,46 @@ export interface AIReviewResult {
   summary: { totalCorrections: number; totalSuggestions: number; criticalAlerts: number };
 }
 
+// ---------- Entretien Professionnel ----------
+export interface ProfessionalCampaign {
+  id: string;
+  year: number;
+  name: string;
+  status: ProfessionalCampaignStatus;
+  scheduledFrom?: string;
+  scheduledTo?: string;
+  closingDeadline?: string;
+}
+
+export interface ProfessionalInterview {
+  id: string;
+  campaignId: string;
+  employeeId: string;
+  status: ProfessionalInterviewStatus;
+  scheduledAt?: string;
+  conductedAt?: string;
+  careerReview: string;
+  skillsAcquired: string;
+  evolutionMobility: MobilityWish;
+  evolutionNotes: string;
+  trainingWishes: string;
+  conclusions: string;
+  employeeComment: string;
+  managerComment: string;
+  employeeSignedAt?: string;
+  managerSignedAt?: string;
+}
+
+export interface NewProfessionalCampaignForm {
+  year: number;
+  name?: string;
+  scheduledFrom?: string;
+  scheduledTo?: string;
+  closingDeadline?: string;
+}
+
 // ---------- Storage ----------
-export type StorageKey = 'employees' | 'semesters' | 'evaluations' | 'positions' | 'templates' | 'establishments' | 'teams';
+export type StorageKey = 'employees' | 'semesters' | 'evaluations' | 'positions' | 'templates' | 'establishments' | 'teams' | 'professionalCampaigns' | 'professionalInterviews';
 
 export interface StorageData {
   employees: Employee[];
@@ -267,6 +311,8 @@ export interface StorageData {
   templates: ObjectiveTemplate[];
   establishments: Establishment[];
   teams: Team[];
+  professionalCampaigns: ProfessionalCampaign[];
+  professionalInterviews: ProfessionalInterview[];
 }
 
 // ---------- Context Types par domaine ----------
@@ -369,6 +415,26 @@ export interface TemplateActions {
 }
 
 export type TemplateContextType = TemplateState & TemplateActions;
+
+// Professional Interviews
+export interface ProfessionalInterviewState {
+  professionalCampaigns: ProfessionalCampaign[];
+  professionalInterviews: ProfessionalInterview[];
+}
+
+export interface ProfessionalInterviewActions {
+  addProfessionalCampaign: (form: NewProfessionalCampaignForm) => Promise<void>;
+  updateProfessionalCampaign: (campaign: ProfessionalCampaign) => Promise<void>;
+  deleteProfessionalCampaign: (id: string) => Promise<void>;
+  publishProfessionalCampaign: (id: string) => Promise<void>;
+  closeProfessionalCampaign: (id: string) => Promise<void>;
+  addProfessionalInterview: (campaignId: string, employeeId: string) => Promise<ProfessionalInterview>;
+  updateProfessionalInterview: (id: string, fields: Partial<ProfessionalInterview>) => Promise<void>;
+  deleteProfessionalInterview: (id: string) => Promise<void>;
+  signProfessionalInterview: (id: string, by: 'employee' | 'manager') => Promise<void>;
+}
+
+export type ProfessionalInterviewContextType = ProfessionalInterviewState & ProfessionalInterviewActions;
 
 // ---------- Combined (compat) ----------
 export interface AppState {

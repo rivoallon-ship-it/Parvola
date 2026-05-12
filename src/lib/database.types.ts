@@ -7,6 +7,9 @@ export type DbUserRole = 'admin' | 'rh' | 'directeur' | 'manager' | 'employee';
 export type DbCampaignStatus = 'draft' | 'active' | 'closed';
 export type DbEvaluationStatus = 'not_started' | 'in_progress' | 'submitted' | 'validated';
 export type DbObjectiveStatus = 'not_started' | 'in_progress' | 'completed' | 'blocked';
+export type DbProfessionalCampaignStatus = 'draft' | 'active' | 'closed';
+export type DbProfessionalInterviewStatus = 'scheduled' | 'in_progress' | 'completed';
+export type DbProfessionalMobilityWish = 'none' | 'internal' | 'external' | 'geographic';
 
 export interface DbEstablishment {
   id: string;
@@ -120,6 +123,41 @@ export interface DbCompany {
   owner_id: string | null;
   logo: string;
   ai_prompts: Record<string, string> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbProfessionalCampaign {
+  id: string;
+  company_id: string;
+  year: number;
+  name: string;
+  status: DbProfessionalCampaignStatus;
+  scheduled_from: string | null;
+  scheduled_to: string | null;
+  closing_deadline: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbProfessionalInterview {
+  id: string;
+  company_id: string;
+  campaign_id: string;
+  employee_id: string;
+  status: DbProfessionalInterviewStatus;
+  scheduled_at: string | null;
+  conducted_at: string | null;
+  career_review: string;
+  skills_acquired: string;
+  evolution_mobility: DbProfessionalMobilityWish;
+  evolution_notes: string;
+  training_wishes: string;
+  conclusions: string;
+  employee_comment: string;
+  manager_comment: string;
+  employee_signed_at: string | null;
+  manager_signed_at: string | null;
   created_at: string;
   updated_at: string;
 }

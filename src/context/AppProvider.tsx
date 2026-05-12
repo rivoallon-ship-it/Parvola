@@ -7,6 +7,7 @@ import { EmployeeProvider } from './EmployeeContext';
 import { OrganizationProvider } from './OrganizationContext';
 import { SemesterProvider } from './SemesterContext';
 import { TemplateProvider, useTemplateContext } from './TemplateContext';
+import { ProfessionalInterviewProvider } from './ProfessionalInterviewContext';
 import { LoginPage, SignupPage } from '@/components/auth';
 import { colors } from '@/constants/colors';
 import type { Employee, Semester, ObjectiveTemplate, StorageData } from '@/types';
@@ -108,14 +109,19 @@ const DataLoadedProviders: React.FC<{ data: StorageData; children: React.ReactNo
             initialPositions={data.positions}
             initialTemplates={data.templates}
           >
-            <RefWiring
-              selectedEmployeeRef={selectedEmployeeRef}
-              selectedSemesterRef={selectedSemesterRef}
-              templatesRef={templatesRef}
-            />
-            <LoadingDone>
-              {children}
-            </LoadingDone>
+            <ProfessionalInterviewProvider
+              initialCampaigns={data.professionalCampaigns}
+              initialInterviews={data.professionalInterviews}
+            >
+              <RefWiring
+                selectedEmployeeRef={selectedEmployeeRef}
+                selectedSemesterRef={selectedSemesterRef}
+                templatesRef={templatesRef}
+              />
+              <LoadingDone>
+                {children}
+              </LoadingDone>
+            </ProfessionalInterviewProvider>
           </TemplateProvider>
         </SemesterProvider>
       </OrganizationProvider>

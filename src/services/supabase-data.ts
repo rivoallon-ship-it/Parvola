@@ -18,6 +18,12 @@ import type {
   EvaluationStatus,
   ObjectiveStatus,
   CampaignStatus,
+  ProfessionalCampaign,
+  ProfessionalCampaignStatus,
+  ProfessionalInterview,
+  ProfessionalInterviewStatus,
+  MobilityWish,
+  NewProfessionalCampaignForm,
 } from '@/types';
 import type {
   DbEstablishment,
@@ -28,6 +34,8 @@ import type {
   DbSemester,
   DbEvaluation,
   DbObjective,
+  DbProfessionalCampaign,
+  DbProfessionalInterview,
 } from '@/lib/database.types';
 
 // ============================================
@@ -451,6 +459,135 @@ export async function insertObjectivesBatch(
   return data.sort((a: DbObjective, b: DbObjective) => a.order_index - b.order_index).map(mapObjective);
 }
 
+// ---------- Professional Campaigns ----------
+
+const mapProfessionalCampaign = (row: DbProfessionalCampaign): ProfessionalCampaign => ({
+  id: row.id,
+  year: row.year,
+  name: row.name,
+  status: row.status as ProfessionalCampaignStatus,
+  scheduledFrom: row.scheduled_from || undefined,
+  scheduledTo: row.scheduled_to || undefined,
+  closingDeadline: row.closing_deadline || undefined,
+});
+
+export async function fetchProfessionalCampaigns(): Promise<ProfessionalCampaign[]> {
+  const data = throwIfError(
+    await supabase.from('professional_campaigns').select('*').order('year', { ascending: false })
+  );
+  return data.map(mapProfessionalCampaign);
+}
+
+export async function insertProfessionalCampaign(form: NewProfessionalCampaignForm): Promise<ProfessionalCampaign> {
+  const name = form.name || `Entretiens professionnels ${form.year}`;
+  const data = throwIfError(
+    await supabase.from('professional_campaigns').insert({
+      year: form.year,
+      name,
+      status: 'draft',
+      scheduled_from: form.scheduledFrom || null,
+      scheduled_to: form.scheduledTo || null,
+      closing_deadline: form.closingDeadline || null,
+    }).select().single()
+  );
+  return mapProfessionalCampaign(data);
+}
+
+export async function updateProfessionalCampaignDb(campaign: ProfessionalCampaign): Promise<void> {
+  throwIfMutationError(
+    await supabase.from('professional_campaigns').update({
+      year: campaign.year,
+      name: campaign.name,
+      status: campaign.status,
+      scheduled_from: campaign.scheduledFrom || null,
+      scheduled_to: campaign.scheduledTo || null,
+      closing_deadline: campaign.closingDeadline || null,
+    }).eq('id', campaign.id)
+  );
+}
+
+export async function deleteProfessionalCampaignDb(id: string): Promise<void> {
+  throwIfMutationError(await supabase.from('professional_campaigns').delete().eq('id', id));
+}
+
+// ---------- Professional Interviews ----------
+
+const mapProfessionalInterview = (row: DbProfessionalInterview): ProfessionalInterview => ({
+  id: row.id,
+  campaignId: row.campaign_id,
+  employeeId: row.employee_id,
+  status: row.status as ProfessionalInterviewStatus,
+  scheduledAt: row.scheduled_at || undefined,
+  conductedAt: row.conducted_at || undefined,
+  careerReview: row.career_review,
+  skillsAcquired: row.skills_acquired,
+  evolutionMobility: row.evolution_mobility as MobilityWish,
+  evolutionNotes: row.evolution_notes,
+  trainingWishes: row.training_wishes,
+  conclusions: row.conclusions,
+  employeeComment: row.employee_comment,
+  managerComment: row.manager_comment,
+  employeeSignedAt: row.employee_signed_at || undefined,
+  managerSignedAt: row.manager_signed_at || undefined,
+});
+
+export async function fetchProfessionalInterviews(): Promise<ProfessionalInterview[]> {
+  const data = throwIfError(
+    await supabase.from('professional_interviews').select('*').order('created_at')
+  );
+  return data.map(mapProfessionalInterview);
+}
+
+export async function insertProfessionalInterview(data: {
+  campaignId: string;
+  employeeId: string;
+}): Promise<ProfessionalInterview> {
+  const row = throwIfError(
+    await supabase.from('professional_interviews').insert({
+      campaign_id: data.campaignId,
+      employee_id: data.employeeId,
+      status: 'scheduled',
+    }).select().single()
+  );
+  return mapProfessionalInterview(row);
+}
+
+export async function updateProfessionalInterviewDb(
+  id: string,
+  fields: Partial<ProfessionalInterview>
+): Promise<void> {
+  const columnMap: Partial<Record<keyof ProfessionalInterview, string>> = {
+    status: 'status',
+    scheduledAt: 'scheduled_at',
+    conductedAt: 'conducted_at',
+    careerReview: 'career_review',
+    skillsAcquired: 'skills_acquired',
+    evolutionMobility: 'evolution_mobility',
+    evolutionNotes: 'evolution_notes',
+    trainingWishes: 'training_wishes',
+    conclusions: 'conclusions',
+    employeeComment: 'employee_comment',
+    managerComment: 'manager_comment',
+    employeeSignedAt: 'employee_signed_at',
+    managerSignedAt: 'manager_signed_at',
+  };
+  const update: Record<string, unknown> = {};
+  for (const [key, column] of Object.entries(columnMap)) {
+    const value = fields[key as keyof ProfessionalInterview];
+    if (value !== undefined && column) {
+      update[column] = value === '' && (key.endsWith('At') || key === 'scheduledAt' || key === 'conductedAt') ? null : value;
+    }
+  }
+  if (Object.keys(update).length === 0) return;
+  throwIfMutationError(
+    await supabase.from('professional_interviews').update(update).eq('id', id)
+  );
+}
+
+export async function deleteProfessionalInterviewDb(id: string): Promise<void> {
+  throwIfMutationError(await supabase.from('professional_interviews').delete().eq('id', id));
+}
+
 // ---------- Profiles ----------
 
 export async function fetchProfile(userId: string) {
@@ -556,7 +693,17 @@ export async function sendEmployeeInvitation(
 // ---------- Bulk fetch for initial load ----------
 
 export async function fetchAllData() {
-  const [establishments, teams, employees, positions, templates, semesters, evaluations] = await Promise.all([
+  const [
+    establishments,
+    teams,
+    employees,
+    positions,
+    templates,
+    semesters,
+    evaluations,
+    professionalCampaigns,
+    professionalInterviews,
+  ] = await Promise.all([
     fetchEstablishments(),
     fetchTeams(),
     fetchEmployees(),
@@ -564,6 +711,18 @@ export async function fetchAllData() {
     fetchTemplates(),
     fetchSemesters(),
     fetchEvaluations(),
+    fetchProfessionalCampaigns(),
+    fetchProfessionalInterviews(),
   ]);
-  return { establishments, teams, employees, positions, templates, semesters, evaluations };
+  return {
+    establishments,
+    teams,
+    employees,
+    positions,
+    templates,
+    semesters,
+    evaluations,
+    professionalCampaigns,
+    professionalInterviews,
+  };
 }
