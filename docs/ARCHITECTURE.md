@@ -92,7 +92,9 @@ Composant → Hook / Service (supabase-data.ts)
             <OrganizationProvider>
               <SemesterProvider>
                 <TemplateProvider>
-                  {/* App content */}
+                  <ProfessionalInterviewProvider>
+                    {/* App content */}
+                  </ProfessionalInterviewProvider>
                 </TemplateProvider>
               </SemesterProvider>
             </OrganizationProvider>
@@ -117,6 +119,7 @@ Composant → Hook / Service (supabase-data.ts)
 | 005 | `005_position_role_employee_email.sql` | Champ `role` sur positions, champ `email` sur employees |
 | 006 | `006_company_ai_prompts.sql` | Colonne `ai_prompts JSONB` sur companies |
 | 007 | `007_security_hardening.sql` | Policies INSERT/DELETE sur companies |
+| 008 | `008_professional_interviews.sql` | Domaine entretien professionnel (tables `professional_campaigns`, `professional_interviews`, enums, RLS multi-tenant) |
 
 ---
 

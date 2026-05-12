@@ -89,7 +89,7 @@ supabase/
 
 ### 3.2 State management — Context API + useReducer
 
-5 contextes React domaine par domaine (pas de Redux) :
+6 contextes React domaine par domaine (pas de Redux) :
 
 | Contexte | Responsabilité |
 |----------|---------------|
@@ -97,8 +97,9 @@ supabase/
 | `NavigationContext` | Vue courante, employé/semestre sélectionné, recherche |
 | `EmployeeContext` | CRUD employés, import Excel |
 | `OrganizationContext` | Établissements et équipes |
-| `SemesterContext` | Campagnes, évaluations, objectifs, workflow |
+| `SemesterContext` | Campagnes (entretien annuel), évaluations, objectifs, workflow |
 | `TemplateContext` | Postes et templates d'objectifs |
+| `ProfessionalInterviewContext` | Campagnes biennales d'entretien professionnel et entretiens individuels (domaine séparé) |
 
 Le composant `AppProvider` combine tous les contextes. Un hook `useApp()` fournit une API de compatibilité.
 
@@ -252,6 +253,70 @@ Non démarré → En cours → Soumis → Validé
 
 ---
 
+## 8bis. Entretien professionnel (domaine séparé)
+
+L'entretien professionnel est un dispositif RH français **distinct** de
+l'entretien annuel d'évaluation : périodicité biennale, pas de notation,
+centré sur le projet pro / la formation / l'évolution, avec un bilan
+récapitulatif obligatoire à 6 ans.
+
+### 8bis.1 Choix d'architecture
+
+Domaine **totalement séparé** de `Semester` / `Evaluation` :
+
+- Tables dédiées (`professional_campaigns`, `professional_interviews`),
+  pas de discriminator sur les tables existantes.
+- Contexte React dédié (`ProfessionalInterviewContext`).
+- Statuts propres : `scheduled → in_progress → completed` (pas de
+  soumission/validation hiérarchique).
+
+**Raison** : pas de champs communs significatifs (pas d'objectifs, pas de
+9-box, pas de rating), et workflow paritaire vs hiérarchique. Une fusion
+aurait pollué tous les composants `Evaluation` avec des `if (type === …)`.
+
+### 8bis.2 Cycle de vie campagne
+
+```
+Brouillon (draft) → En cours (active) → Clôturée (closed)
+```
+
+Identique en surface aux campagnes d'évaluation, mais sans réutilisation
+de code — la cohérence visuelle se fera côté UI (briques `Badge`, layout
+partagés) et non côté domaine.
+
+### 8bis.3 Champs d'un entretien
+
+| Champ | Type | Cadre légal |
+|-------|------|-------------|
+| `careerReview` | TEXT | Bilan du parcours depuis le dernier entretien |
+| `skillsAcquired` | TEXT | Compétences acquises / développées |
+| `evolutionMobility` | enum (none, internal, external, geographic) | Souhait de mobilité |
+| `evolutionNotes` | TEXT | Détail du projet professionnel |
+| `trainingWishes` | TEXT | CPF, VAE, bilan de compétences |
+| `conclusions` | TEXT | Engagements pris à l'issue de l'entretien |
+| `employeeComment`, `managerComment` | TEXT | Commentaires paritaires |
+| `employeeSignedAt`, `managerSignedAt` | TIMESTAMPTZ | Signatures logiques (preuve de tenue) |
+
+### 8bis.4 Préparation du bilan 6 ans
+
+L'index composite `(employee_id, conducted_at)` sur
+`professional_interviews` permettra une lecture rétrospective rapide des
+3 entretiens d'un même salarié sur 6 ans. Le bilan lui-même est différé
+à un lot ultérieur.
+
+### 8bis.5 Roadmap
+
+| Lot | Contenu | Statut |
+|-----|---------|--------|
+| **1** | Fondations (DB, types, services, contexte) | **Livré (1.6.0)** |
+| 2 | CRUD campagnes pro (création, liste, statuts) | À venir |
+| 3 | Saisie entretien (formulaire multi-sections) | À venir |
+| 4 | Historique sur fiche employé | À venir |
+| 5 | Agent IA de préparation d'entretien | À venir |
+| 6 | Navigation + i18n + permissions transverses | À venir |
+
+---
+
 ## 9. Invitation d'employés
 
 ### 9.1 Flux
@@ -375,6 +440,9 @@ companies
 | 003 | `003_roles_directeur_admin.sql` | Extension enum : ajout `admin` et `directeur` |
 | 004 | `004_roles_policies_functions.sql` | `establishment_ids` sur profiles, helpers RLS, réécriture complète des policies pour 5 rôles |
 | 005 | `005_position_role_employee_email.sql` | Colonne `role` sur positions, colonne `email` sur employees |
+| 006 | `006_company_ai_prompts.sql` | Colonne `ai_prompts JSONB` sur companies |
+| 007 | `007_security_hardening.sql` | Policies INSERT/DELETE sur companies (verrou Edge Function) |
+| 008 | `008_professional_interviews.sql` | Domaine entretien professionnel : tables `professional_campaigns` et `professional_interviews`, enums dédiés, RLS multi-tenant scopée par rôle, index `(employee_id, conducted_at)` pour bilan 6 ans |
 
 ### 14.3 Edge Functions
 

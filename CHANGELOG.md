@@ -4,6 +4,60 @@ Toutes les modifications notables du projet Talent Review sont documentées dans
 
 ---
 
+## [1.6.0] — 2026-04-26
+
+### Entretien professionnel — Lot 1 : fondations (`2593c74`)
+
+Introduction du domaine **entretien professionnel** (dispositif RH français
+biennal, distinct de l'entretien annuel d'évaluation). Architecture choisie :
+domaine séparé (option B) — pas de fusion avec `Semester` / `Evaluation`.
+Ce premier lot ne livre aucune UI : il pose les fondations (DB, types,
+services, contexte React) pour les lots suivants (CRUD, saisie, historique, IA).
+
+#### Base de données
+- **Migration 008** : tables `professional_campaigns` et `professional_interviews`
+  avec multi-tenancy (`company_id`), RLS scopée par rôle (RH = tout, manager =
+  scope team, employé = soi), trigger `set_company_id`, index composite
+  `(employee_id, conducted_at)` pour préparer le bilan 6 ans.
+- 3 nouveaux enums : `professional_campaign_status`,
+  `professional_interview_status`, `professional_mobility_wish`.
+- Statuts entretien : `scheduled → in_progress → completed` (pas de
+  soumission/validation hiérarchique — c'est un échange paritaire documenté).
+- Fichier : `supabase/migrations/008_professional_interviews.sql`
+
+#### Types
+- Domaine : `ProfessionalCampaign`, `ProfessionalInterview`, `MobilityWish`,
+  `ProfessionalCampaignStatus`, `ProfessionalInterviewStatus`,
+  `NewProfessionalCampaignForm`, `ProfessionalInterviewContextType`.
+- DB : `DbProfessionalCampaign`, `DbProfessionalInterview`.
+- `StorageData` étendu pour inclure les deux nouvelles collections.
+- Fichiers : `src/types/index.ts`, `src/lib/database.types.ts`
+
+#### Services Supabase
+- CRUD complet : `fetchProfessionalCampaigns`, `insertProfessionalCampaign`,
+  `updateProfessionalCampaignDb`, `deleteProfessionalCampaignDb`,
+  `fetchProfessionalInterviews`, `insertProfessionalInterview`,
+  `updateProfessionalInterviewDb` (mise à jour partielle via column map),
+  `deleteProfessionalInterviewDb`.
+- `fetchAllData()` charge désormais les campagnes pro et entretiens en parallèle.
+- Fichier : `src/services/supabase-data.ts`
+
+#### Contexte React
+- Nouveau `ProfessionalInterviewProvider` (reducer + 9 actions :
+  add/update/delete/publish/close campagne, add/update/delete entretien,
+  `signProfessionalInterview('employee' | 'manager')`).
+- Hook `useProfessionalInterviewContext()` exporté depuis `src/context/index.ts`.
+- Provider branché sous `TemplateProvider` dans `AppProvider`.
+- Fichiers : `src/context/ProfessionalInterviewContext.tsx`,
+  `src/context/AppProvider.tsx`, `src/context/index.ts`
+
+#### À faire pour activer le runtime
+- Pousser la migration sur Supabase : `npx supabase db push --linked`.
+  Tant que cette étape n'est pas faite, `fetchProfessionalCampaigns()` lèvera
+  au runtime (la table n'existe pas), bien que le typecheck passe.
+
+---
+
 ## [1.5.0] — 2025-03-23
 
 ### Security Hardening (`c860d23`)
