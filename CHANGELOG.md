@@ -51,10 +51,10 @@ services, contexte React) pour les lots suivants (CRUD, saisie, historique, IA).
 - Fichiers : `src/context/ProfessionalInterviewContext.tsx`,
   `src/context/AppProvider.tsx`, `src/context/index.ts`
 
-#### À faire pour activer le runtime
-- Pousser la migration sur Supabase : `npx supabase db push --linked`.
-  Tant que cette étape n'est pas faite, `fetchProfessionalCampaigns()` lèvera
-  au runtime (la table n'existe pas), bien que le typecheck passe.
+#### Déploiement DB
+- Migration appliquée sur le projet Supabase `nbtvwgsdnmorciniowxi`
+  le 2026-05-13 (`supabase db push --linked --include-all`).
+- État remote vérifié : `Local 008 / Remote 008`.
 
 ---
 
