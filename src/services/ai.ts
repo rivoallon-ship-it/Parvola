@@ -31,8 +31,10 @@ const callAnthropicAPIWithConfig = async (prompt: string, config: AIModelConfig)
   });
 
   if (error) {
-    // Extract detailed error from response body when available
-    const detail = data?.error || '';
+    // FunctionsHttpError stores the response body in error.context
+    const ctx = (error as any).context;
+    const detail = typeof ctx === 'object' ? ctx?.error : typeof ctx === 'string' ? ctx : '';
+    console.error('AI proxy error details:', { message: error.message, context: ctx, data });
     throw new Error(`AI proxy error: ${error.message}${detail ? ` — ${detail}` : ''}`);
   }
 
