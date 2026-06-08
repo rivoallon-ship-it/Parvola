@@ -1,4 +1,4 @@
-# Architecture — Talent Review
+# Architecture — Parvola (ex-Talent Review)
 
 ## Stack technique
 
@@ -164,5 +164,5 @@ SUPABASE_ACCESS_TOKEN=<token> npx supabase db push --project-ref nbtvwgsdnmorcin
 ```
 
 ### URLs
-- **Production** : https://talent-review-eta.vercel.app
+- **Production** : https://parvola.vercel.app
 - **Supabase Dashboard** : https://supabase.com/dashboard/project/nbtvwgsdnmorciniowxi

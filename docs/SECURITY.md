@@ -1,4 +1,4 @@
-# Architecture de sécurité — Talent Review
+# Architecture de sécurité — Parvola (ex-Talent Review)
 
 Ce document décrit les mesures de sécurité implémentées dans l'application.
 
@@ -62,6 +62,7 @@ Seules les origines autorisées reçoivent des headers CORS. Les requêtes d'ori
 
 ```typescript
 const ALLOWED_ORIGINS = [
+  'https://parvola.vercel.app',
   'https://talent-review-eta.vercel.app',
   'https://talent-review.vercel.app',
   'http://localhost:3000',

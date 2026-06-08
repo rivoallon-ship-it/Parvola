@@ -1,14 +1,17 @@
-# Talent Review — Documentation technique et fonctionnelle
+# Parvola — Documentation technique et fonctionnelle
 
-Ce document recense l'architecture, les fonctionnalités et les choix techniques de l'application Talent Review dans son état actuel.
+> Anciennement **Talent Review**, renommé **Parvola** le 2026-06-08 (voir CHANGELOG 1.7.0). Le backend Supabase est inchangé.
+
+Ce document recense l'architecture, les fonctionnalités et les choix techniques de l'application Parvola dans son état actuel.
 
 ---
 
 ## 1. Vue d'ensemble
 
-**Talent Review** est une application SaaS de gestion des revues de talents et d'entretiens d'évaluation, conçue pour la restauration et le retail multi-sites.
+**Parvola** est une application SaaS de gestion des revues de talents et d'entretiens d'évaluation, conçue pour la restauration et le retail multi-sites.
 
-- **URL de production** : https://talent-review-eta.vercel.app
+- **URL de production** : https://parvola.vercel.app
+- **Dépôt** : https://github.com/rivoallon-ship-it/Parvola
 - **Backend** : Supabase (PostgreSQL + Auth + Edge Functions + RLS)
 - **Frontend** : React 18 SPA déployée sur Vercel
 - **IA** : Anthropic Claude (Sonnet 4 + Haiku 4.5) via edge function proxy
@@ -458,7 +461,7 @@ companies
 
 | Service | Plateforme |
 |---------|-----------|
-| Frontend | Vercel (`talent-review-eta.vercel.app`) |
+| Frontend | Vercel (`parvola.vercel.app`) |
 | Backend | Supabase (projet `nbtvwgsdnmorciniowxi`) |
 | Edge Functions | Supabase Edge Functions (Deno) |
 | Auth | Supabase Auth |
@@ -466,17 +469,26 @@ companies
 
 ### Commandes de déploiement
 
+> ⚠️ **Sécurité tokens** : ne JAMAIS écrire `SUPABASE_ACCESS_TOKEN=sbp_...` en
+> clair (historique shell + risque de partage). Exporter le token via `read -rs`
+> qui n'affiche rien et ne laisse pas de trace. Le token doit provenir du compte
+> propriétaire du projet (org `ggcnhvocvhpamprxqncs`). Voir docs/SECURITY.md.
+
 ```bash
+# Exporter le token une fois par session (valeur masquee, hors historique)
+read -rs SUPABASE_ACCESS_TOKEN
+export SUPABASE_ACCESS_TOKEN
+
 # Frontend
 npm run build && npx vercel --prod
 
 # Migrations
-SUPABASE_ACCESS_TOKEN=... npx supabase db push --linked
+npx supabase db push --linked
 
 # Edge Functions
-SUPABASE_ACCESS_TOKEN=... npx supabase functions deploy ai-proxy --project-ref nbtvwgsdnmorciniowxi
-SUPABASE_ACCESS_TOKEN=... npx supabase functions deploy invite-user --project-ref nbtvwgsdnmorciniowxi
-SUPABASE_ACCESS_TOKEN=... npx supabase functions deploy signup-company --project-ref nbtvwgsdnmorciniowxi
+npx supabase functions deploy ai-proxy --project-ref nbtvwgsdnmorciniowxi
+npx supabase functions deploy invite-user --project-ref nbtvwgsdnmorciniowxi
+npx supabase functions deploy signup-company --project-ref nbtvwgsdnmorciniowxi
 ```
 
 ---

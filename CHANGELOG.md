@@ -1,6 +1,48 @@
 # Changelog
 
-Toutes les modifications notables du projet Talent Review sont documentées dans ce fichier.
+Toutes les modifications notables du projet Parvola (ex-Talent Review) sont documentées dans ce fichier.
+
+---
+
+## [1.7.0] — 2026-06-08
+
+### Renommage du projet : Talent Review → **Parvola**
+
+Changement de marque de l'application. Le renommage a été propagé sur
+toute la chaîne :
+
+- **Dépôt GitHub** : remote migré vers `rivoallon-ship-it/Parvola`.
+- **Vercel** : projet renommé, nouvelle URL de prod `https://parvola.vercel.app`.
+- **`package.json`** : champ `name` mis à jour (commit `0cd270f`).
+- **Dossier local** : `~/Desktop/TalentReview` → `~/Desktop/Parvola`.
+- Le backend Supabase est inchangé (projet `nbtvwgsdnmorciniowxi`, org
+  `ggcnhvocvhpamprxqncs`) — seuls le frontend et la marque changent.
+
+#### CORS Edge Functions (`1414400`)
+
+Ajout de la nouvelle origine de production `https://parvola.vercel.app`
+à la liste `ALLOWED_ORIGINS` des 3 Edge Functions, sans retirer les
+anciennes URL `talent-review-*.vercel.app` (rétro-compat) :
+
+- `supabase/functions/ai-proxy/index.ts`
+- `supabase/functions/invite-user/index.ts`
+- `supabase/functions/signup-company/index.ts`
+
+Les 3 fonctions ont été **redéployées** sur le projet `nbtvwgsdnmorciniowxi`.
+
+### Outillage
+
+- **CLI Supabase ajoutée en dev dependency** (`6bf2116`). Permet de
+  déployer via `npx supabase` sans dépendre de Homebrew (absent de la
+  machine). Voir `package.json`.
+
+### Sécurité
+
+- **Incident PAT Supabase #3** : un troisième Personal Access Token a été
+  exposé en clair lors d'une manipulation terminal (un commentaire FR avec
+  apostrophe a fait basculer zsh en mode `quote>`, court-circuitant le
+  `read -rs`). Token révoqué. La procédure de déploiement documentée plus
+  bas utilise désormais le pattern `read -rs` sans valeur inline.
 
 ---
 
