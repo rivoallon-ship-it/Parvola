@@ -20,6 +20,7 @@ const MAX_MESSAGE_LENGTH = 15000;
 
 // Security: restrict CORS to known origins
 const ALLOWED_ORIGINS = [
+  'https://parvola.vercel.app',
   'https://talent-review-eta.vercel.app',
   'https://talent-review.vercel.app',
   'http://localhost:3000',
