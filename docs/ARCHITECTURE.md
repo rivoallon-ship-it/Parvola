@@ -16,7 +16,7 @@
 ## Structure du projet
 
 ```
-TalentReview/
+Parvola/
 ├── src/
 │   ├── components/
 │   │   ├── admin/          # SettingsView, MemberList
