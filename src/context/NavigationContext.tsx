@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
-import type { NavigationContextType, NavigationState, ViewType, Employee, Semester } from '@/types';
+import type { NavigationContextType, NavigationState, ViewType, Employee, Semester, ProfessionalCampaign, ProfessionalInterview } from '@/types';
 
 const initialState: NavigationState = {
   currentView: 'semesters',
   selectedEmployee: null,
   selectedSemester: null,
   viewingSemester: null,
+  viewingProfessionalCampaign: null,
+  viewingProfessionalInterview: null,
   searchTerm: '',
   isLoading: true,
 };
@@ -15,6 +17,8 @@ type Action =
   | { type: 'SET_SELECTED_EMPLOYEE'; payload: Employee | null }
   | { type: 'SET_SELECTED_SEMESTER'; payload: Semester | null }
   | { type: 'SET_VIEWING_SEMESTER'; payload: Semester | null }
+  | { type: 'SET_VIEWING_PROFESSIONAL_CAMPAIGN'; payload: ProfessionalCampaign | null }
+  | { type: 'SET_VIEWING_PROFESSIONAL_INTERVIEW'; payload: ProfessionalInterview | null }
   | { type: 'SET_SEARCH_TERM'; payload: string }
   | { type: 'SET_IS_LOADING'; payload: boolean };
 
@@ -28,6 +32,10 @@ const reducer = (state: NavigationState, action: Action): NavigationState => {
       return { ...state, selectedSemester: action.payload };
     case 'SET_VIEWING_SEMESTER':
       return { ...state, viewingSemester: action.payload };
+    case 'SET_VIEWING_PROFESSIONAL_CAMPAIGN':
+      return { ...state, viewingProfessionalCampaign: action.payload };
+    case 'SET_VIEWING_PROFESSIONAL_INTERVIEW':
+      return { ...state, viewingProfessionalInterview: action.payload };
     case 'SET_SEARCH_TERM':
       return { ...state, searchTerm: action.payload };
     case 'SET_IS_LOADING':
@@ -58,6 +66,14 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     dispatch({ type: 'SET_VIEWING_SEMESTER', payload: semester });
   }, []);
 
+  const setViewingProfessionalCampaign = useCallback((campaign: ProfessionalCampaign | null) => {
+    dispatch({ type: 'SET_VIEWING_PROFESSIONAL_CAMPAIGN', payload: campaign });
+  }, []);
+
+  const setViewingProfessionalInterview = useCallback((interview: ProfessionalInterview | null) => {
+    dispatch({ type: 'SET_VIEWING_PROFESSIONAL_INTERVIEW', payload: interview });
+  }, []);
+
   const setSearchTerm = useCallback((term: string) => {
     dispatch({ type: 'SET_SEARCH_TERM', payload: term });
   }, []);
@@ -72,6 +88,8 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setSelectedEmployee,
     setSelectedSemester,
     setViewingSemester,
+    setViewingProfessionalCampaign,
+    setViewingProfessionalInterview,
     setSearchTerm,
     setIsLoading,
   };
