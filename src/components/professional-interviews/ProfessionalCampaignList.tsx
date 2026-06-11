@@ -33,9 +33,13 @@ export const ProfessionalCampaignList: React.FC = () => {
   }, {} as Record<number, typeof visibleCampaigns>);
 
   const handleAdd = async (form: Parameters<typeof addProfessionalCampaign>[0]) => {
-    await addProfessionalCampaign(form);
-    setShowAddForm(false);
-    toast.success(t('toast.professionalCampaignAdded'));
+    try {
+      await addProfessionalCampaign(form);
+      setShowAddForm(false);
+      toast.success(t('toast.professionalCampaignAdded'));
+    } catch {
+      toast.error(t('toast.genericError'));
+    }
   };
 
   const handleDelete = (id: string) => {
