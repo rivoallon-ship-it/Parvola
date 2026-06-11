@@ -4,6 +4,67 @@ Toutes les modifications notables du projet Parvola (ex-Talent Review) sont docu
 
 ---
 
+## [1.8.0] — 2026-06-11
+
+### Entretien professionnel — Lots 2, 3 & 6 : interface complète (`00b2aa9`)
+
+Livraison de toute la couche **UI** du domaine entretien professionnel,
+posé en fondations au Lot 1 (1.6.0). Aucun changement backend : les
+migrations, types, services et le `ProfessionalInterviewContext` étaient
+déjà en place. Cette PR câble l'interface, la navigation, les permissions
+et les traductions. Couvre les lots 2 (CRUD campagnes), 3 (saisie
+entretien) et 6 (navigation/i18n/permissions) de la roadmap §8bis.5.
+
+#### Lot 2 — CRUD campagnes pro
+- `ProfessionalCampaignList` : campagnes regroupées par année, création via
+  `ProfessionalCampaignForm`, cycle de vie `draft → active → closed`
+  (publier / clôturer / supprimer) selon les permissions. Les managers et
+  directeurs ne voient pas les brouillons.
+- `ProfessionalCampaignCard` : badge de statut, barre de progression
+  (`completedCount / totalEmployees`), dates planifiées et date de clôture.
+- Toasts `professionalCampaignAdded` / `professionalCampaignDeleted`.
+
+#### Lot 3 — Saisie entretien
+- `ProfessionalTeamView` : liste des salariés du périmètre avec statut
+  d'entretien (icônes terminé / en cours / non démarré). L'entretien est
+  créé automatiquement (`addProfessionalInterview`) au premier clic du
+  manager. Salariés désactivés tant que la campagne est en brouillon.
+- `ProfessionalInterviewView` : formulaire en 6 sections — bilan du
+  parcours, évolution & mobilité (select `none/internal/external/geographic`),
+  formation, conclusions, commentaires paritaires, signatures. Le manager
+  édite tout sauf le commentaire salarié ; le salarié n'édite que son
+  commentaire. Lecture seule quand la campagne est clôturée. Signatures
+  logiques via `signProfessionalInterview` une fois l'entretien `completed`.
+- `MyProfessionalInterviewsView` : le salarié consulte ses propres
+  entretiens (brouillons masqués) et les ouvre en lecture/commentaire.
+
+#### Lot 6 — Navigation, permissions & i18n
+- 4 nouvelles `ViewType` : `professional-campaigns`, `professional-team`,
+  `professional-interview`, `my-professional-interviews`, câblées dans
+  `NavigationContext` (états `viewingProfessionalCampaign` /
+  `viewingProfessionalInterview` + setters) et le routeur `App.tsx`.
+- `getNavItems` (permissions) : onglet **« Entretiens pro. »** pour
+  admin/rh/directeur/manager, **« Mes entretiens pro. »** pour les employés.
+- Entrée de navigation avec icône `Briefcase` dans `Navigation.tsx`.
+- Traductions **FR / EN / ES** complètes pour toutes les clés
+  `professionalCampaign.*` et `professionalInterview.*`.
+
+#### Fichiers
+- Nouveaux : `src/components/professional-interviews/{ProfessionalCampaignList,
+  ProfessionalCampaignCard,ProfessionalCampaignForm,ProfessionalTeamView,
+  ProfessionalInterviewView,MyProfessionalInterviewsView,index}.tsx`,
+  `src/hooks/useProfessionalInterviews.ts`.
+- Modifiés : `src/App.tsx`, `src/components/layout/Navigation.tsx`,
+  `src/context/NavigationContext.tsx`, `src/hooks/index.ts`,
+  `src/types/index.ts`, `src/utils/permissions.ts`,
+  `src/locales/{fr,en,es}.json`.
+
+#### Reste à faire (roadmap §8bis.5)
+- Lot 4 : historique des entretiens sur la fiche employé.
+- Lot 5 : agent IA de préparation d'entretien.
+
+---
+
 ## [1.7.0] — 2026-06-08
 
 ### Renommage du projet : Talent Review → **Parvola**
