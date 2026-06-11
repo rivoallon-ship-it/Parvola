@@ -312,11 +312,11 @@ L'index composite `(employee_id, conducted_at)` sur
 | Lot | Contenu | Statut |
 |-----|---------|--------|
 | **1** | Fondations (DB, types, services, contexte) | **Livré (1.6.0)** |
-| 2 | CRUD campagnes pro (création, liste, statuts) | À venir |
-| 3 | Saisie entretien (formulaire multi-sections) | À venir |
+| **2** | CRUD campagnes pro (création, liste, statuts) | **Livré (1.8.0)** |
+| **3** | Saisie entretien (formulaire multi-sections) | **Livré (1.8.0)** |
 | 4 | Historique sur fiche employé | À venir |
 | 5 | Agent IA de préparation d'entretien | À venir |
-| 6 | Navigation + i18n + permissions transverses | À venir |
+| **6** | Navigation + i18n + permissions transverses | **Livré (1.8.0)** |
 
 ---
 
