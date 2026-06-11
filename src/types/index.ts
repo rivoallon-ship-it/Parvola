@@ -15,7 +15,7 @@ export type ProfessionalInterviewStatus = 'scheduled' | 'in_progress' | 'complet
 
 export type MobilityWish = 'none' | 'internal' | 'external' | 'geographic';
 
-export type ViewType = 'semesters' | 'semester-team' | 'team' | 'templates' | 'evaluation' | 'nine-box' | 'my-evaluations' | 'settings';
+export type ViewType = 'semesters' | 'semester-team' | 'team' | 'templates' | 'evaluation' | 'nine-box' | 'my-evaluations' | 'settings' | 'professional-campaigns' | 'professional-team' | 'professional-interview' | 'my-professional-interviews';
 
 // ---------- Utilisateurs & Rôles ----------
 export type UserRole = 'admin' | 'rh' | 'directeur' | 'manager' | 'employee';
@@ -323,6 +323,8 @@ export interface NavigationState {
   selectedEmployee: Employee | null;
   selectedSemester: Semester | null;
   viewingSemester: Semester | null;
+  viewingProfessionalCampaign: ProfessionalCampaign | null;
+  viewingProfessionalInterview: ProfessionalInterview | null;
   searchTerm: string;
   isLoading: boolean;
 }
@@ -332,6 +334,8 @@ export interface NavigationActions {
   setSelectedEmployee: (employee: Employee | null) => void;
   setSelectedSemester: (semester: Semester | null) => void;
   setViewingSemester: (semester: Semester | null) => void;
+  setViewingProfessionalCampaign: (campaign: ProfessionalCampaign | null) => void;
+  setViewingProfessionalInterview: (interview: ProfessionalInterview | null) => void;
   setSearchTerm: (term: string) => void;
   setIsLoading: (loading: boolean) => void;
 }

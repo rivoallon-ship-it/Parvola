@@ -4,6 +4,7 @@ export { useEmployees } from './useEmployees';
 export { useOrganization } from './useOrganization';
 export { useSemesters } from './useSemesters';
 export { useTemplates } from './useTemplates';
+export { useProfessionalInterviews } from './useProfessionalInterviews';
 
 // Hook de compatibilité (migration progressive)
 export { useApp } from './useApp';

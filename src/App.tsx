@@ -9,6 +9,7 @@ import { EvaluationView, MyEvaluationsView } from '@/components/evaluations';
 import { TemplateList } from '@/components/templates';
 import { NineBoxView } from '@/components/nine-box';
 import { SettingsView } from '@/components/admin';
+import { ProfessionalCampaignList, ProfessionalTeamView, ProfessionalInterviewView, MyProfessionalInterviewsView } from '@/components/professional-interviews';
 import { colors } from '@/constants/colors';
 
 // ============================================
@@ -51,6 +52,14 @@ const AppContent: React.FC = () => {
         return <MyEvaluationsView />;
       case 'settings':
         return <SettingsView />;
+      case 'professional-campaigns':
+        return <ProfessionalCampaignList />;
+      case 'professional-team':
+        return <ProfessionalTeamView />;
+      case 'professional-interview':
+        return <ProfessionalInterviewView />;
+      case 'my-professional-interviews':
+        return <MyProfessionalInterviewsView />;
       default:
         return <SemesterList />;
     }
