@@ -50,6 +50,7 @@ export const ProfessionalInterviewView: React.FC = () => {
         managerComment: interview.managerComment,
         scheduledAt: interview.scheduledAt,
       });
+      setDirty(false);
     }
   }, [interview?.id]);
 
@@ -247,7 +248,7 @@ export const ProfessionalInterviewView: React.FC = () => {
             value={form.employeeComment || ''}
             onChange={(e) => handleChange('employeeComment', e.target.value)}
             rows={3}
-            disabled={isReadOnly}
+            disabled={isReadOnly || !isEmployee}
             placeholder={t('professionalInterview.employeeCommentPlaceholder')}
           />
         </div>
@@ -284,7 +285,7 @@ export const ProfessionalInterviewView: React.FC = () => {
                 <span className="text-sm">{t('professionalInterview.signedOn')} {formatDate(interview.employeeSignedAt!)}</span>
               </div>
             ) : (
-              canSign && (isEmployee || !isEmployee) && !isReadOnly ? (
+              canSign && isEmployee && !isReadOnly ? (
                 <Button variant="secondary" size="sm" onClick={() => handleSign('employee')}>
                   <PenLine size={14} className="mr-1" />
                   {t('professionalInterview.sign')}
@@ -313,7 +314,7 @@ export const ProfessionalInterviewView: React.FC = () => {
           )}
         </div>
       )}
-      {!isReadOnly && isEmployee && !isReadOnly && (
+      {!isReadOnly && isEmployee && (
         <div className="flex gap-3 pb-8">
           {dirty && (
             <Button variant="secondary" onClick={handleSave} disabled={saving}>
