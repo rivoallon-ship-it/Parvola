@@ -29,7 +29,8 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSwitchToLogin }) => {
   const [slug, setSlug] = useState('');
 
   // Step 2 fields
-  const [userName, setUserName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -51,8 +52,10 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSwitchToLogin }) => {
   };
 
   const isStep1Valid = companyName.trim().length >= 2 && SLUG_REGEX.test(slug);
+  const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
   const isStep2Valid =
-    userName.trim().length >= 1 &&
+    firstName.trim().length >= 1 &&
+    lastName.trim().length >= 1 &&
     email.includes('@') &&
     password.length >= 8 &&
     password === confirmPassword;
@@ -67,7 +70,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSwitchToLogin }) => {
     setError('');
     setLoading(true);
     try {
-      await signUp({ companyName: companyName.trim(), slug, email, password, userName: userName.trim() });
+      await signUp({ companyName: companyName.trim(), slug, email, password, userName: fullName });
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       setError(msg || t('auth.signupError'));
@@ -146,14 +149,23 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSwitchToLogin }) => {
 
             {step === 2 && (
               <>
-                <Input
-                  label={t('auth.yourName')}
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  placeholder="Sophie Laurent"
-                  required
-                  icon={<UserPlus size={16} />}
-                />
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    label={t('auth.yourFirstName')}
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Sophie"
+                    required
+                    icon={<UserPlus size={16} />}
+                  />
+                  <Input
+                    label={t('auth.yourLastName')}
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Laurent"
+                    required
+                  />
+                </div>
                 <Input
                   label={t('auth.email')}
                   type="email"

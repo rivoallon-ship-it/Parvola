@@ -19,6 +19,8 @@
   "auth.slugHint": "Identificador único usado en la URL (letras minúsculas, números, guiones)",
   "auth.slugInvalid": "3 a 50 caracteres: letras minúsculas, números y guiones",
   "auth.yourName": "Su nombre",
+  "auth.yourFirstName": "Nombre",
+  "auth.yourLastName": "Apellido",
   "auth.confirmPassword": "Confirmar contraseña",
   "auth.passwordTooShort": "Mínimo 8 caracteres",
   "auth.passwordMismatch": "Las contraseñas no coinciden",

@@ -14,6 +14,8 @@
   "auth.slugHint": "Identifiant unique pour votre espace (lettres minuscules, chiffres, tirets)",
   "auth.slugInvalid": "3 à 50 caractères : lettres minuscules, chiffres et tirets",
   "auth.yourName": "Votre nom",
+  "auth.yourFirstName": "Prénom",
+  "auth.yourLastName": "Nom",
   "auth.confirmPassword": "Confirmer le mot de passe",
   "auth.passwordMismatch": "Les mots de passe ne correspondent pas",
   "auth.passwordTooShort": "8 caractères minimum",

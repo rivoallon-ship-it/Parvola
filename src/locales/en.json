@@ -20,6 +20,8 @@
   "auth.slugHint": "Unique identifier used in the URL (lowercase letters, numbers, hyphens)",
   "auth.slugInvalid": "3 to 50 characters: lowercase letters, numbers, and hyphens",
   "auth.yourName": "Your name",
+  "auth.yourFirstName": "First name",
+  "auth.yourLastName": "Last name",
   "auth.confirmPassword": "Confirm password",
   "auth.passwordTooShort": "Minimum 8 characters",
   "auth.passwordMismatch": "Passwords do not match",
