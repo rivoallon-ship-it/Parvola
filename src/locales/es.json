@@ -560,6 +560,8 @@
   "professionalInterview.signedOn": "Firmado el",
   "professionalInterview.notSigned": "No firmado",
   "signature.namePlaceholder": "Nombre del firmante",
+  "signature.firstNamePlaceholder": "Nombre",
+  "signature.lastNamePlaceholder": "Apellido",
   "signature.drawHint": "Firme aquí con el ratón o el dedo",
   "signature.clear": "Borrar",
   "signature.validate": "Validar firma",

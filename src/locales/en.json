@@ -561,6 +561,8 @@
   "professionalInterview.signedOn": "Signed on",
   "professionalInterview.notSigned": "Not signed",
   "signature.namePlaceholder": "Signatory name",
+  "signature.firstNamePlaceholder": "First name",
+  "signature.lastNamePlaceholder": "Last name",
   "signature.drawHint": "Sign here with mouse or finger",
   "signature.clear": "Clear",
   "signature.validate": "Validate signature",
