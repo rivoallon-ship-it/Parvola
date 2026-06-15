@@ -139,6 +139,12 @@ export interface Evaluation {
   bilanEmployee?: string;
   performanceRating?: NineBoxRating;
   potentialRating?: NineBoxRating;
+  employeeSignedAt?: string;
+  managerSignedAt?: string;
+  employeeSignature?: string;
+  employeeSignatureName?: string;
+  managerSignature?: string;
+  managerSignatureName?: string;
 }
 
 export interface Position {
@@ -290,6 +296,10 @@ export interface ProfessionalInterview {
   managerComment: string;
   employeeSignedAt?: string;
   managerSignedAt?: string;
+  employeeSignature?: string;
+  employeeSignatureName?: string;
+  managerSignature?: string;
+  managerSignatureName?: string;
 }
 
 export interface NewProfessionalCampaignForm {
@@ -398,6 +408,7 @@ export interface SemesterActions {
   validateEvaluation: (employeeId: string, semesterId: string) => Promise<void>;
   updateEvaluationBilan: (employeeId: string, semesterId: string, field: 'bilanManager' | 'bilanEmployee', value: string) => Promise<void>;
   updateEvaluationRatings: (employeeId: string, semesterId: string, performanceRating: NineBoxRating, potentialRating: NineBoxRating) => Promise<void>;
+  signEvaluation: (employeeId: string, semesterId: string, by: 'employee' | 'manager', signature: string, name: string) => Promise<void>;
   setEvaluations: (evaluations: Evaluation[]) => void;
 }
 
@@ -435,7 +446,7 @@ export interface ProfessionalInterviewActions {
   addProfessionalInterview: (campaignId: string, employeeId: string) => Promise<ProfessionalInterview>;
   updateProfessionalInterview: (id: string, fields: Partial<ProfessionalInterview>) => Promise<void>;
   deleteProfessionalInterview: (id: string) => Promise<void>;
-  signProfessionalInterview: (id: string, by: 'employee' | 'manager') => Promise<void>;
+  signProfessionalInterview: (id: string, by: 'employee' | 'manager', signature: string, name: string) => Promise<void>;
 }
 
 export type ProfessionalInterviewContextType = ProfessionalInterviewState & ProfessionalInterviewActions;

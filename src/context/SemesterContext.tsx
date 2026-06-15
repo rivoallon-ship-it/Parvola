@@ -23,6 +23,7 @@ import {
   updateObjectiveDb,
   deleteObjectiveDb,
   reorderObjectivesDb,
+  signEvaluationAsEmployee,
 } from '@/services/supabase-data';
 import { calculateDeadline } from '@/utils/helpers';
 import { OBJECTIVE_CONFIG } from '@/constants/config';
@@ -388,6 +389,29 @@ export const SemesterProvider: React.FC<SemesterProviderProps> = ({
     dispatch({ type: 'UPDATE_EVALUATION', payload: { id: evaluation.id, changes: { performanceRating, potentialRating } } });
   }, [getOrCreateEval]);
 
+  const signEvaluation = useCallback(async (
+    employeeId: string,
+    semesterId: string,
+    by: 'employee' | 'manager',
+    signature: string,
+    name: string
+  ) => {
+    const existing = state.evaluations.find(
+      (e) => e.employeeId === employeeId && e.semesterId === semesterId
+    );
+    if (!existing) return;
+    const now = new Date().toISOString();
+    if (by === 'employee') {
+      // Employees only hold SELECT on evaluations; sign via SECURITY DEFINER RPC.
+      await signEvaluationAsEmployee(existing.id, signature, name);
+      dispatch({ type: 'UPDATE_EVALUATION', payload: { id: existing.id, changes: { employeeSignedAt: now, employeeSignature: signature, employeeSignatureName: name } } });
+    } else {
+      const changes = { managerSignedAt: now, managerSignature: signature, managerSignatureName: name };
+      await updateEvaluationDb(existing.id, changes);
+      dispatch({ type: 'UPDATE_EVALUATION', payload: { id: existing.id, changes } });
+    }
+  }, [state.evaluations]);
+
   const value: SemesterContextType = {
     ...state,
     addSemester,
@@ -407,6 +431,7 @@ export const SemesterProvider: React.FC<SemesterProviderProps> = ({
     validateEvaluation,
     updateEvaluationBilan,
     updateEvaluationRatings,
+    signEvaluation,
     setEvaluations,
   };
 

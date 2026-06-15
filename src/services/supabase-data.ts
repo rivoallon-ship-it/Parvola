@@ -340,6 +340,12 @@ const mapEvaluation = (row: DbEvaluation & { objectives: DbObjective[] }): Evalu
   bilanEmployee: row.bilan_employee || undefined,
   performanceRating: row.performance_rating as NineBoxRating | undefined,
   potentialRating: row.potential_rating as NineBoxRating | undefined,
+  employeeSignedAt: row.employee_signed_at || undefined,
+  managerSignedAt: row.manager_signed_at || undefined,
+  employeeSignature: row.employee_signature || undefined,
+  employeeSignatureName: row.employee_signature_name || undefined,
+  managerSignature: row.manager_signature || undefined,
+  managerSignatureName: row.manager_signature_name || undefined,
   objectives: (row.objectives || [])
     .sort((a, b) => a.order_index - b.order_index)
     .map(mapObjective),
@@ -375,6 +381,9 @@ export async function updateEvaluationDb(
     bilanEmployee: string;
     performanceRating: NineBoxRating;
     potentialRating: NineBoxRating;
+    managerSignature: string;
+    managerSignatureName: string;
+    managerSignedAt: string;
   }>
 ): Promise<void> {
   const update: Record<string, unknown> = {};
@@ -383,7 +392,25 @@ export async function updateEvaluationDb(
   if (fields.bilanEmployee !== undefined) update.bilan_employee = fields.bilanEmployee;
   if (fields.performanceRating !== undefined) update.performance_rating = fields.performanceRating;
   if (fields.potentialRating !== undefined) update.potential_rating = fields.potentialRating;
+  if (fields.managerSignature !== undefined) update.manager_signature = fields.managerSignature;
+  if (fields.managerSignatureName !== undefined) update.manager_signature_name = fields.managerSignatureName;
+  if (fields.managerSignedAt !== undefined) update.manager_signed_at = fields.managerSignedAt;
   throwIfMutationError(await supabase.from('evaluations').update(update).eq('id', id));
+}
+
+/** Employee self-signs their own evaluation via SECURITY DEFINER RPC. */
+export async function signEvaluationAsEmployee(
+  id: string,
+  signature: string,
+  name: string
+): Promise<void> {
+  throwIfMutationError(
+    await supabase.rpc('sign_evaluation_as_employee', {
+      p_id: id,
+      p_signature: signature,
+      p_name: name,
+    })
+  );
 }
 
 export async function insertObjectiveDb(
@@ -529,6 +556,10 @@ const mapProfessionalInterview = (row: DbProfessionalInterview): ProfessionalInt
   managerComment: row.manager_comment,
   employeeSignedAt: row.employee_signed_at || undefined,
   managerSignedAt: row.manager_signed_at || undefined,
+  employeeSignature: row.employee_signature || undefined,
+  employeeSignatureName: row.employee_signature_name || undefined,
+  managerSignature: row.manager_signature || undefined,
+  managerSignatureName: row.manager_signature_name || undefined,
 });
 
 export async function fetchProfessionalInterviews(): Promise<ProfessionalInterview[]> {
@@ -570,6 +601,8 @@ export async function updateProfessionalInterviewDb(
     managerComment: 'manager_comment',
     employeeSignedAt: 'employee_signed_at',
     managerSignedAt: 'manager_signed_at',
+    managerSignature: 'manager_signature',
+    managerSignatureName: 'manager_signature_name',
   };
   const update: Record<string, unknown> = {};
   for (const [key, column] of Object.entries(columnMap)) {
@@ -586,6 +619,21 @@ export async function updateProfessionalInterviewDb(
 
 export async function deleteProfessionalInterviewDb(id: string): Promise<void> {
   throwIfMutationError(await supabase.from('professional_interviews').delete().eq('id', id));
+}
+
+/** Employee self-signs their own professional interview via SECURITY DEFINER RPC. */
+export async function signProfessionalInterviewAsEmployee(
+  id: string,
+  signature: string,
+  name: string
+): Promise<void> {
+  throwIfMutationError(
+    await supabase.rpc('sign_professional_interview_as_employee', {
+      p_id: id,
+      p_signature: signature,
+      p_name: name,
+    })
+  );
 }
 
 // ---------- Profiles ----------

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { AISuggestedObjective, ObjectiveTemplate, NineBoxRating } from '@/types';
-import { Card, Button, Modal, EmptyState, ConfirmDialog, Select, TextArea, EvaluationStatusBadge, DictationButton } from '@/components/common';
+import { Card, Button, Modal, EmptyState, ConfirmDialog, Select, TextArea, EvaluationStatusBadge, DictationButton, SignaturePad } from '@/components/common';
 import { BackButton } from '@/components/layout';
 import { ObjectiveCard } from './ObjectiveCard';
 import { AIAssistant } from './AIAssistant';
@@ -41,7 +41,7 @@ export const EvaluationView: React.FC = () => {
   const { t } = useTranslation();
   const { selectedEmployee, selectedSemester, viewingSemester, setCurrentView, setSelectedEmployee, setSelectedSemester } = useNavigation();
   const { employees } = useEmployees();
-  const { semesters, evaluations, addObjective, addObjectiveWithData, addObjectiveFromTemplate, updateObjective, deleteObjective, reorderObjectives, duplicateObjectives, updateEvaluationBilan, updateEvaluationRatings, submitEvaluation, validateEvaluation } = useSemesters();
+  const { semesters, evaluations, addObjective, addObjectiveWithData, addObjectiveFromTemplate, updateObjective, deleteObjective, reorderObjectives, duplicateObjectives, updateEvaluationBilan, updateEvaluationRatings, submitEvaluation, validateEvaluation, signEvaluation } = useSemesters();
   const { templates, positions } = useTemplates();
   const { currentUser } = useUser();
   const toast = useToast();
@@ -91,6 +91,15 @@ export const EvaluationView: React.FC = () => {
   const showNineBox = canViewNineBoxRatings(userRole);
   const showBilan = canViewBilanManager(userRole);
 
+  // Signatures: available once the evaluation is submitted.
+  const showSignatures = !!selectedSemester && (evalStatus === 'submitted' || evalStatus === 'validated');
+  const managerSigned = !!currentEval?.managerSignature;
+  const employeeSigned = !!currentEval?.employeeSignature;
+  // Manager update is blocked by RLS once validated → sign while submitted.
+  const managerCanSign = !isEmployee && evalStatus === 'submitted' && campaignStatus !== 'closed';
+  // Employee signs via SECURITY DEFINER RPC, so works even when validated.
+  const employeeCanSign = isEmployee && (evalStatus === 'submitted' || evalStatus === 'validated');
+
   // Filter: exclude draft semesters from the selector
   const selectableSemesters = semesters.filter((s) => s.status !== 'draft');
 
@@ -134,6 +143,12 @@ export const EvaluationView: React.FC = () => {
       close();
       toast.success(t('toast.evaluationValidated'));
     });
+  };
+
+  const handleSign = async (by: 'employee' | 'manager', signature: string, name: string) => {
+    if (!selectedEmployee || !selectedSemester) return;
+    await signEvaluation(selectedEmployee.id, selectedSemester.id, by, signature, name);
+    toast.success(t('toast.evaluationSigned'));
   };
 
   const handleRatingChange = async (field: 'performanceRating' | 'potentialRating', value: string) => {
@@ -735,6 +750,45 @@ export const EvaluationView: React.FC = () => {
               )}
             </div>
           </div>
+
+          {/* Signatures Block */}
+          {showSignatures && (
+            <Card style={{ borderLeftWidth: '4px', borderLeftColor: colors.btn.primary }}>
+              <h3 className="text-xl font-bold mb-4" style={{ color: colors.btn.primary }}>
+                {t('evaluation.signaturesTitle')}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg border border-gray-100">
+                  <p className="text-sm font-medium text-gray-600 mb-2">{t('evaluation.managerSignature')}</p>
+                  {managerSigned ? (
+                    <SignaturePad
+                      value={currentEval?.managerSignature}
+                      name={currentEval?.managerSignatureName}
+                      signedAt={currentEval?.managerSignedAt}
+                    />
+                  ) : managerCanSign ? (
+                    <SignaturePad onSign={(sig, name) => handleSign('manager', sig, name)} />
+                  ) : (
+                    <p className="text-xs text-gray-400">{t('signature.notSigned')}</p>
+                  )}
+                </div>
+                <div className="p-4 rounded-lg border border-gray-100">
+                  <p className="text-sm font-medium text-gray-600 mb-2">{t('evaluation.employeeSignature')}</p>
+                  {employeeSigned ? (
+                    <SignaturePad
+                      value={currentEval?.employeeSignature}
+                      name={currentEval?.employeeSignatureName}
+                      signedAt={currentEval?.employeeSignedAt}
+                    />
+                  ) : employeeCanSign ? (
+                    <SignaturePad onSign={(sig, name) => handleSign('employee', sig, name)} />
+                  ) : (
+                    <p className="text-xs text-gray-400">{t('signature.notSigned')}</p>
+                  )}
+                </div>
+              </div>
+            </Card>
+          )}
 
           {/* Empty State */}
           {objectives.length === 0 && !showAIAssistant && (

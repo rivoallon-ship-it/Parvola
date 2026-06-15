@@ -13,6 +13,7 @@ import {
   insertProfessionalInterview,
   updateProfessionalInterviewDb,
   deleteProfessionalInterviewDb,
+  signProfessionalInterviewAsEmployee,
 } from '@/services/supabase-data';
 
 type Action =
@@ -140,11 +141,17 @@ export const ProfessionalInterviewProvider: React.FC<ProfessionalInterviewProvid
     dispatch({ type: 'REMOVE_INTERVIEW', payload: id });
   }, []);
 
-  const signProfessionalInterview = useCallback(async (id: string, by: 'employee' | 'manager') => {
+  const signProfessionalInterview = useCallback(async (id: string, by: 'employee' | 'manager', signature: string, name: string) => {
     const now = new Date().toISOString();
-    const field = by === 'employee' ? 'employeeSignedAt' : 'managerSignedAt';
-    await updateProfessionalInterviewDb(id, { [field]: now });
-    dispatch({ type: 'UPDATE_INTERVIEW', payload: { id, changes: { [field]: now } } });
+    if (by === 'employee') {
+      // Employees only hold SELECT on the table; sign via SECURITY DEFINER RPC.
+      await signProfessionalInterviewAsEmployee(id, signature, name);
+      dispatch({ type: 'UPDATE_INTERVIEW', payload: { id, changes: { employeeSignedAt: now, employeeSignature: signature, employeeSignatureName: name } } });
+    } else {
+      const changes = { managerSignedAt: now, managerSignature: signature, managerSignatureName: name };
+      await updateProfessionalInterviewDb(id, changes);
+      dispatch({ type: 'UPDATE_INTERVIEW', payload: { id, changes } });
+    }
   }, []);
 
   const value: ProfessionalInterviewContextType = {

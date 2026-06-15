@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, PenLine } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ProfessionalInterview, MobilityWish } from '@/types';
-import { Card, Button, TextArea, CampaignStatusBadge } from '@/components/common';
+import { Card, Button, TextArea, CampaignStatusBadge, SignaturePad } from '@/components/common';
 import { BackButton } from '@/components/layout';
 import { useNavigation, useProfessionalInterviews, useUser } from '@/hooks';
 import { colors } from '@/constants/colors';
-import { formatDate } from '@/utils/helpers';
 
 const MOBILITY_OPTIONS: MobilityWish[] = ['none', 'internal', 'external', 'geographic'];
 
@@ -83,8 +82,8 @@ export const ProfessionalInterviewView: React.FC = () => {
     }
   };
 
-  const handleSign = async (by: 'employee' | 'manager') => {
-    await signProfessionalInterview(interview.id, by);
+  const handleSign = async (by: 'employee' | 'manager', signature: string, name: string) => {
+    await signProfessionalInterview(interview.id, by, signature, name);
   };
 
   const handleBack = () => {
@@ -258,41 +257,33 @@ export const ProfessionalInterviewView: React.FC = () => {
       <Card>
         <SectionTitle>{t('professionalInterview.section.signatures')}</SectionTitle>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 rounded-lg border border-dashed border-gray-200">
+          <div className="p-4 rounded-lg border border-gray-100">
             <p className="text-sm font-medium text-gray-600 mb-2">{t('professionalInterview.managerSignature')}</p>
             {managerSigned ? (
-              <div className="flex items-center gap-2 text-green-600">
-                <CheckCircle2 size={16} />
-                <span className="text-sm">{t('professionalInterview.signedOn')} {formatDate(interview.managerSignedAt!)}</span>
-              </div>
+              <SignaturePad
+                value={interview.managerSignature}
+                name={interview.managerSignatureName}
+                signedAt={interview.managerSignedAt}
+              />
+            ) : canSign && !isEmployee && !isReadOnly ? (
+              <SignaturePad onSign={(sig, name) => handleSign('manager', sig, name)} />
             ) : (
-              canSign && !isEmployee && !isReadOnly ? (
-                <Button variant="secondary" size="sm" onClick={() => handleSign('manager')}>
-                  <PenLine size={14} className="mr-1" />
-                  {t('professionalInterview.sign')}
-                </Button>
-              ) : (
-                <p className="text-xs text-gray-400">{t('professionalInterview.notSigned')}</p>
-              )
+              <p className="text-xs text-gray-400">{t('professionalInterview.notSigned')}</p>
             )}
           </div>
 
-          <div className="p-4 rounded-lg border border-dashed border-gray-200">
+          <div className="p-4 rounded-lg border border-gray-100">
             <p className="text-sm font-medium text-gray-600 mb-2">{t('professionalInterview.employeeSignature')}</p>
             {employeeSigned ? (
-              <div className="flex items-center gap-2 text-green-600">
-                <CheckCircle2 size={16} />
-                <span className="text-sm">{t('professionalInterview.signedOn')} {formatDate(interview.employeeSignedAt!)}</span>
-              </div>
+              <SignaturePad
+                value={interview.employeeSignature}
+                name={interview.employeeSignatureName}
+                signedAt={interview.employeeSignedAt}
+              />
+            ) : canSign && isEmployee && !isReadOnly ? (
+              <SignaturePad onSign={(sig, name) => handleSign('employee', sig, name)} />
             ) : (
-              canSign && isEmployee && !isReadOnly ? (
-                <Button variant="secondary" size="sm" onClick={() => handleSign('employee')}>
-                  <PenLine size={14} className="mr-1" />
-                  {t('professionalInterview.sign')}
-                </Button>
-              ) : (
-                <p className="text-xs text-gray-400">{t('professionalInterview.notSigned')}</p>
-              )
+              <p className="text-xs text-gray-400">{t('professionalInterview.notSigned')}</p>
             )}
           </div>
         </div>
