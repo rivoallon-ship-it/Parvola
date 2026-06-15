@@ -570,6 +570,7 @@
   "evaluation.managerSignature": "Firma del manager",
   "evaluation.employeeSignature": "Firma del empleado",
   "toast.evaluationSigned": "Firma guardada",
+  "toast.interviewSigned": "Firma guardada",
   "professionalInterview.mobility.none": "Sin movilidad",
   "professionalInterview.mobility.internal": "Movilidad interna",
   "professionalInterview.mobility.external": "Movilidad externa",

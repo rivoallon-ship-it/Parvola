@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { ProfessionalInterview, MobilityWish } from '@/types';
 import { Card, Button, TextArea, CampaignStatusBadge, SignaturePad } from '@/components/common';
 import { BackButton } from '@/components/layout';
-import { useNavigation, useProfessionalInterviews, useUser } from '@/hooks';
+import { useNavigation, useProfessionalInterviews, useUser, useToast } from '@/hooks';
 import { colors } from '@/constants/colors';
 
 const MOBILITY_OPTIONS: MobilityWish[] = ['none', 'internal', 'external', 'geographic'];
@@ -24,14 +24,16 @@ export const ProfessionalInterviewView: React.FC = () => {
     setCurrentView,
     setViewingProfessionalInterview,
   } = useNavigation();
-  const { updateProfessionalInterview, signProfessionalInterview } = useProfessionalInterviews();
+  const { professionalInterviews, updateProfessionalInterview, signProfessionalInterview } = useProfessionalInterviews();
   const { currentUser } = useUser();
+  const toast = useToast();
 
   const [form, setForm] = useState<Partial<ProfessionalInterview>>({});
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
-  const interview = viewingProfessionalInterview;
+  // Derive from live list so signature updates re-render immediately.
+  const interview = professionalInterviews.find((i) => i.id === viewingProfessionalInterview?.id) ?? viewingProfessionalInterview;
   const campaign = viewingProfessionalCampaign;
   const isReadOnly = campaign?.status === 'closed';
   const isEmployee = currentUser.role === 'employee';
@@ -84,6 +86,7 @@ export const ProfessionalInterviewView: React.FC = () => {
 
   const handleSign = async (by: 'employee' | 'manager', signature: string, name: string) => {
     await signProfessionalInterview(interview.id, by, signature, name);
+    toast.success(t('toast.interviewSigned'));
   };
 
   const handleBack = () => {
