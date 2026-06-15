@@ -4,6 +4,35 @@ Toutes les modifications notables du projet Parvola (ex-Talent Review) sont docu
 
 ---
 
+## [1.9.0] — 2026-06-15
+
+### Signatures manuscrites — entretiens pro & évaluations annuelles
+
+Ajout de la signature **manuscrite** (tracé souris/tactile) avec nom du
+signataire, pour le manager et le salarié, sur les entretiens
+professionnels **et** les évaluations annuelles.
+
+- **`SignaturePad`** (`components/common`) : `<canvas>` natif (Pointer
+  Events, souris + tactile), capture du nom, export PNG (data URL),
+  affichage en lecture seule une fois signé. Aucune dépendance ajoutée.
+- **Migration `010`** : colonnes `*_signature` / `*_signature_name` sur
+  `professional_interviews` et `evaluations` (+ `*_signed_at` sur
+  `evaluations`, qui n'en avait pas).
+- **Sécurité** : les salariés n'ont que le droit `SELECT` sur ces tables.
+  La signature côté salarié passe désormais par des fonctions RPC
+  `SECURITY DEFINER` (`sign_*_as_employee`) qui n'écrivent **que** les
+  colonnes de signature de **sa** ligne. Corrige au passage un bug latent
+  où le bouton « Signer » côté salarié échouait silencieusement contre la
+  RLS sur les entretiens pro.
+- **Entretiens pro** : la section Signatures remplace le bouton « Signer »
+  par le pad (saisie ou lecture seule selon l'état).
+- **Évaluations** : nouveau bloc Signatures visible dès l'état *soumise*.
+  Le manager signe tant que l'éval n'est pas verrouillée (`validated`),
+  le salarié peut signer même après validation (via RPC).
+- Traductions FR / EN / ES.
+
+---
+
 ## [1.8.0] — 2026-06-11
 
 ### Entretien professionnel — Lots 2, 3 & 6 : interface complète (`00b2aa9`)

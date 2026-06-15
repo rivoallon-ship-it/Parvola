@@ -10,4 +10,5 @@ export { StatusBadge } from './StatusBadge';
 export { CampaignStatusBadge } from './CampaignStatusBadge';
 export { EvaluationStatusBadge } from './EvaluationStatusBadge';
 export { DictationButton } from './DictationButton';
+export { SignaturePad } from './SignaturePad';
 export { ToastContainer } from './Toast';

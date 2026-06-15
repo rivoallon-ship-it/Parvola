@@ -83,6 +83,12 @@ export interface DbEvaluation {
   bilan_employee: string | null;
   performance_rating: number | null;
   potential_rating: number | null;
+  employee_signed_at: string | null;
+  manager_signed_at: string | null;
+  employee_signature: string | null;
+  employee_signature_name: string | null;
+  manager_signature: string | null;
+  manager_signature_name: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -158,6 +164,10 @@ export interface DbProfessionalInterview {
   manager_comment: string;
   employee_signed_at: string | null;
   manager_signed_at: string | null;
+  employee_signature: string | null;
+  employee_signature_name: string | null;
+  manager_signature: string | null;
+  manager_signature_name: string | null;
   created_at: string;
   updated_at: string;
 }

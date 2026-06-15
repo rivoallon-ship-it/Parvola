@@ -317,6 +317,23 @@ L'index composite `(employee_id, conducted_at)` sur
 | 4 | Historique sur fiche employé | À venir |
 | 5 | Agent IA de préparation d'entretien | À venir |
 | **6** | Navigation + i18n + permissions transverses | **Livré (1.8.0)** |
+| **7** | Signatures manuscrites (pro + évaluations) | **Livré (1.9.0)** |
+
+### 8bis.6 Signatures manuscrites (1.9.0)
+
+- Composant `SignaturePad` réutilisable : `<canvas>` natif (Pointer Events,
+  souris + tactile), nom du signataire, export PNG en data URL, lecture
+  seule une fois signé. Pas de dépendance ajoutée.
+- Stockage : colonnes `*_signature` (base64 PNG) + `*_signature_name` en
+  base, plutôt que Supabase Storage — quelques Ko par signature, suffisant.
+- **Sécurité** : les salariés n'ayant que `SELECT`, leur signature passe par
+  des fonctions RPC `SECURITY DEFINER` (`sign_*_as_employee`) qui n'écrivent
+  que les colonnes de signature de leur propre ligne. Managers/RH/directeurs
+  signent via l'UPDATE direct déjà autorisé. Corrige un bug latent (bouton
+  « Signer » salarié bloqué par la RLS sur les entretiens pro).
+- Moment : entretien pro → à l'état `completed` (signatures déjà prévues) ;
+  évaluation → dès l'état `submitted` (le manager signe avant le verrouillage
+  `validated`, le salarié peut signer même après via RPC).
 
 ---
 
