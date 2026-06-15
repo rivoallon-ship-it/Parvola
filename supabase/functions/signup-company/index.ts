@@ -16,7 +16,12 @@ const ALLOWED_ORIGINS = [
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get("Origin") || "";
-  if (!ALLOWED_ORIGINS.includes(origin)) {
+  const allowed =
+    ALLOWED_ORIGINS.includes(origin) ||
+    /^https:\/\/[\w-]+-rivoallon-ship-it\.vercel\.app$/.test(origin) ||
+    /^https:\/\/parvola-[\w-]+\.vercel\.app$/.test(origin) ||
+    /^https:\/\/talent-review-[\w-]+\.vercel\.app$/.test(origin);
+  if (!allowed) {
     return null; // Origin not allowed
   }
   return {

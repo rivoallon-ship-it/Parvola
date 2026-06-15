@@ -22,8 +22,15 @@ export async function signupCompany(
   });
 
   if (!response.ok) {
-    const data = await response.json().catch(() => ({ error: 'Signup failed' }));
-    throw new Error(data.error || 'Signup failed');
+    const text = await response.text().catch(() => '');
+    let message = 'Signup failed';
+    try {
+      const data = JSON.parse(text);
+      if (data.error) message = data.error;
+    } catch {
+      if (text) message = text;
+    }
+    throw new Error(message);
   }
 
   return response.json();
