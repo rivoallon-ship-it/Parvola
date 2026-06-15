@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ProfessionalInterview, MobilityWish } from '@/types';
 import { Card, Button, TextArea, CampaignStatusBadge, SignaturePad } from '@/components/common';
@@ -13,6 +13,13 @@ const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   <h3 className="text-base font-semibold mb-3 pb-2 border-b border-gray-100" style={{ color: colors.btn.primary }}>
     {children}
   </h3>
+);
+
+const SectionHelp: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="flex items-start gap-2 mb-4 px-3 py-2.5 rounded-lg bg-teal-50 border border-teal-100 text-sm text-teal-900">
+    <Info size={16} className="mt-0.5 flex-shrink-0 text-teal-600" />
+    <p>{children}</p>
+  </div>
 );
 
 export const ProfessionalInterviewView: React.FC = () => {
@@ -155,6 +162,7 @@ export const ProfessionalInterviewView: React.FC = () => {
       {/* Section 1 : Bilan du parcours */}
       <Card>
         <SectionTitle>{t('professionalInterview.section.careerReview')}</SectionTitle>
+        <SectionHelp>{t('professionalInterview.help.careerReview')}</SectionHelp>
         <div className="space-y-4">
           <TextArea
             label={t('professionalInterview.careerReview')}
@@ -178,6 +186,7 @@ export const ProfessionalInterviewView: React.FC = () => {
       {/* Section 2 : Évolution & Mobilité */}
       <Card>
         <SectionTitle>{t('professionalInterview.section.evolution')}</SectionTitle>
+        <SectionHelp>{t('professionalInterview.help.evolution')}</SectionHelp>
         <div className="space-y-4">
           <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700">
@@ -208,6 +217,7 @@ export const ProfessionalInterviewView: React.FC = () => {
       {/* Section 3 : Formation */}
       <Card>
         <SectionTitle>{t('professionalInterview.section.training')}</SectionTitle>
+        <SectionHelp>{t('professionalInterview.help.training')}</SectionHelp>
         <TextArea
           label={t('professionalInterview.trainingWishes')}
           value={form.trainingWishes || ''}
@@ -221,6 +231,7 @@ export const ProfessionalInterviewView: React.FC = () => {
       {/* Section 4 : Conclusions */}
       <Card>
         <SectionTitle>{t('professionalInterview.section.conclusions')}</SectionTitle>
+        <SectionHelp>{t('professionalInterview.help.conclusions')}</SectionHelp>
         <TextArea
           label={t('professionalInterview.conclusions')}
           value={form.conclusions || ''}
@@ -234,6 +245,7 @@ export const ProfessionalInterviewView: React.FC = () => {
       {/* Section 5 : Commentaires */}
       <Card>
         <SectionTitle>{t('professionalInterview.section.comments')}</SectionTitle>
+        <SectionHelp>{t('professionalInterview.help.comments')}</SectionHelp>
         <div className="space-y-4">
           {!isEmployee && (
             <TextArea
@@ -259,6 +271,7 @@ export const ProfessionalInterviewView: React.FC = () => {
       {/* Section 6 : Signatures */}
       <Card>
         <SectionTitle>{t('professionalInterview.section.signatures')}</SectionTitle>
+        <SectionHelp>{t('professionalInterview.help.signatures')}</SectionHelp>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 rounded-lg border border-gray-100">
             <p className="text-sm font-medium text-gray-600 mb-2">{t('professionalInterview.managerSignature')}</p>
