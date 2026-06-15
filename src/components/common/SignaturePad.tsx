@@ -36,7 +36,8 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
   const drawing = useRef(false);
   const hasStroke = useRef(false);
   const [empty, setEmpty] = useState(true);
-  const [typedName, setTypedName] = useState(name || '');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
 
   // Already signed → read-only display.
   const signed = !!value;
@@ -104,10 +105,13 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
     setEmpty(true);
   };
 
+  const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+  const nameComplete = !!firstName.trim() && !!lastName.trim();
+
   const handleValidate = () => {
     const canvas = canvasRef.current;
-    if (!canvas || !hasStroke.current || !typedName.trim()) return;
-    onSign?.(canvas.toDataURL('image/png'), typedName.trim());
+    if (!canvas || !hasStroke.current || !nameComplete) return;
+    onSign?.(canvas.toDataURL('image/png'), fullName);
   };
 
   if (signed) {
@@ -128,12 +132,20 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
 
   return (
     <div className="space-y-2">
-      <Input
-        value={typedName}
-        onChange={(e) => setTypedName(e.target.value)}
-        placeholder={t('signature.namePlaceholder')}
-        disabled={disabled}
-      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <Input
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+          placeholder={t('signature.firstNamePlaceholder')}
+          disabled={disabled}
+        />
+        <Input
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          placeholder={t('signature.lastNamePlaceholder')}
+          disabled={disabled}
+        />
+      </div>
       <div className="relative">
         <canvas
           ref={canvasRef}
@@ -158,7 +170,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({
           variant="primary"
           size="sm"
           onClick={handleValidate}
-          disabled={disabled || empty || !typedName.trim()}
+          disabled={disabled || empty || !nameComplete}
         >
           <Check size={14} className="mr-1" />
           {t('signature.validate')}
