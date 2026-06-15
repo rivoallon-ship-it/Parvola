@@ -18,8 +18,10 @@ const MAX_ROWS = 5000;
 const ALLOWED_EXTENSIONS = ['.xlsx', '.xls', '.csv'];
 
 /**
- * Parse un fichier Excel et extrait les employés
- * Format attendu: Colonne A = Prénom, Colonne B = Nom, Colonne D = Poste
+ * Parse un fichier Excel et extrait les employés.
+ * Format attendu (1re ligne = en-têtes, ignorée) :
+ *   Colonne A = Prénom, Colonne B = Nom, Colonne C = Poste.
+ * Rétrocompatible : si la colonne C est vide, le poste est lu en colonne D.
  */
 export const parseEmployeesFromExcel = async (file: File): Promise<ImportedEmployee[]> => {
   // Validate file size
@@ -56,22 +58,44 @@ export const parseEmployeesFromExcel = async (file: File): Promise<ImportedEmplo
     const row = jsonData[i];
     if (!row || row.length === 0) continue;
 
-    const col1 = sanitizeCell(row[0]);
-    const col2 = sanitizeCell(row[1]);
-    const col4 = sanitizeCell(row[3]);
+    const firstName = sanitizeCell(row[0]);
+    const lastName = sanitizeCell(row[1]);
+    // Poste en colonne C (nouveau format), repli sur colonne D (ancien format).
+    const position = sanitizeCell(row[2]) || sanitizeCell(row[3]);
 
-    const fullName = [col1, col2].filter(Boolean).join(' ').trim();
+    const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
 
     if (fullName) {
       employees.push({
         name: fullName,
-        position: col4,
+        position,
         photo: getRandomEmoji(),
       });
     }
   }
 
   return employees;
+};
+
+/**
+ * Génère et télécharge un modèle Excel d'import des employés
+ * (ligne d'en-têtes + deux lignes d'exemple).
+ */
+export const downloadEmployeeTemplate = (): void => {
+  const headers = [
+    t('excel.templateFirstName'),
+    t('excel.templateLastName'),
+    t('excel.templatePosition'),
+  ];
+  const examples = [
+    ['Sophie', 'Laurent', 'Cheffe de cuisine'],
+    ['Marc', 'Dubois', 'Serveur'],
+  ];
+  const worksheet = XLSX.utils.aoa_to_sheet([headers, ...examples]);
+  worksheet['!cols'] = [{ wch: 20 }, { wch: 20 }, { wch: 28 }];
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, t('excel.templateSheetName'));
+  XLSX.writeFile(workbook, 'modele-import-employes.xlsx');
 };
 
 /**

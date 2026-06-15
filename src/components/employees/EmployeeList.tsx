@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Plus, Search, FileSpreadsheet, Users, Building2 } from 'lucide-react';
+import { Plus, Search, FileSpreadsheet, Users, Building2, Download, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Employee, NewEmployeeForm, Establishment, Team, NewEstablishmentForm, NewTeamForm } from '@/types';
 import { Button, Input, EmptyState, Modal, Select } from '@/components/common';
@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/layout';
 import { EmployeeCard } from './EmployeeCard';
 import { EmployeeForm } from './EmployeeForm';
 import { EstablishmentCard, EstablishmentForm, TeamForm } from '@/components/organization';
-import { parseEmployeesFromExcel } from '@/services/excel';
+import { parseEmployeesFromExcel, downloadEmployeeTemplate } from '@/services/excel';
 import { useNavigation, useEmployees, useOrganization, useTemplates, useUser, useConfirmDialog, useToast } from '@/hooks';
 import { canEditEmployees, getEmployeesInScope } from '@/utils/permissions';
 import { ConfirmDialog } from '@/components/common';
@@ -38,6 +38,7 @@ export const EmployeeList: React.FC = () => {
 
   // Import modal state
   const [showImportModal, setShowImportModal] = useState(false);
+  const [importStep, setImportStep] = useState<'intro' | 'configure'>('intro');
   const [importEstablishmentId, setImportEstablishmentId] = useState<string>('');
   const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
 
@@ -109,21 +110,20 @@ export const EmployeeList: React.FC = () => {
   const unassignedEmployees = filteredEmployees.filter((e) => !e.establishmentId);
 
   // ========== Handlers Import ==========
+  const handleOpenImportModal = () => {
+    setImportStep('intro');
+    setPendingImportFile(null);
+    setImportEstablishmentId(establishments[0]?.id || '');
+    setShowImportModal(true);
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (establishments.length === 0) {
-      toast.warning(t('toast.createEstablishmentFirst'));
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      return;
-    }
-
     setPendingImportFile(file);
     setImportEstablishmentId(establishments[0]?.id || '');
-    setShowImportModal(true);
+    setImportStep('configure');
 
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -147,12 +147,14 @@ export const EmployeeList: React.FC = () => {
     }
 
     setShowImportModal(false);
+    setImportStep('intro');
     setPendingImportFile(null);
     setImportEstablishmentId('');
   };
 
   const handleCancelImport = () => {
     setShowImportModal(false);
+    setImportStep('intro');
     setPendingImportFile(null);
     setImportEstablishmentId('');
   };
@@ -280,14 +282,14 @@ export const EmployeeList: React.FC = () => {
               <Button
                 variant="secondary"
                 icon={<FileSpreadsheet size={20} />}
-                onClick={() => fileInputRef.current?.click()}
+                onClick={handleOpenImportModal}
               >
                 {t('employees.importFromExcel')}
               </Button>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".xlsx,.xls"
+                accept=".xlsx,.xls,.csv"
                 onChange={handleFileSelect}
                 style={{ display: 'none' }}
               />
@@ -406,27 +408,89 @@ export const EmployeeList: React.FC = () => {
         onClose={handleCancelImport}
         title={t('employees.importTitle')}
       >
-        <div className="space-y-4">
-          <p className="text-gray-600">
-            {t('employees.importDescription')}{' '}
-            <strong>{pendingImportFile?.name}</strong>
-          </p>
-          <Select
-            label={t('employees.importDestination')}
-            value={importEstablishmentId}
-            onChange={(e) => setImportEstablishmentId(e.target.value)}
-            options={establishmentOptions}
-            required
-          />
-          <div className="flex gap-2 pt-2">
-            <Button variant="primary" onClick={handleConfirmImport}>
-              {t('common.import')}
-            </Button>
-            <Button variant="secondary" onClick={handleCancelImport}>
-              {t('common.cancel')}
-            </Button>
+        {importStep === 'intro' ? (
+          <div className="space-y-4">
+            <p className="text-gray-600">{t('employees.importIntro')}</p>
+
+            {/* Format guide */}
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-2">
+                {t('employees.importFormatTitle')}
+              </p>
+              <div className="overflow-hidden rounded-lg border border-gray-200">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-500">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">{t('employees.importColumn')}</th>
+                      <th className="px-3 py-2 text-left font-medium">{t('employees.importContent')}</th>
+                      <th className="px-3 py-2 text-left font-medium">{t('employees.importExample')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    <tr>
+                      <td className="px-3 py-2 font-mono text-gray-400">A</td>
+                      <td className="px-3 py-2 text-gray-700">{t('employees.importColFirstName')}</td>
+                      <td className="px-3 py-2 text-gray-500">Sophie</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 font-mono text-gray-400">B</td>
+                      <td className="px-3 py-2 text-gray-700">{t('employees.importColLastName')}</td>
+                      <td className="px-3 py-2 text-gray-500">Laurent</td>
+                    </tr>
+                    <tr>
+                      <td className="px-3 py-2 font-mono text-gray-400">C</td>
+                      <td className="px-3 py-2 text-gray-700">{t('employees.importColPositionOptional')}</td>
+                      <td className="px-3 py-2 text-gray-500">Cheffe de cuisine</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-2 text-xs text-gray-500">{t('employees.importTip')}</p>
+            </div>
+
+            {establishments.length === 0 && (
+              <div className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-amber-50 border-amber-200 text-amber-800 text-sm">
+                {t('employees.importNoEstablishment')}
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-2 pt-2">
+              <Button variant="secondary" icon={<Download size={18} />} onClick={downloadEmployeeTemplate}>
+                {t('employees.downloadTemplate')}
+              </Button>
+              <Button
+                variant="primary"
+                icon={<Upload size={18} />}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={establishments.length === 0}
+              >
+                {t('employees.chooseFile')}
+              </Button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              {t('employees.importSelectedFile')} : <strong>{pendingImportFile?.name}</strong>
+            </p>
+            <p className="text-sm text-gray-500">{t('employees.importDescription')}</p>
+            <Select
+              label={t('employees.importDestination')}
+              value={importEstablishmentId}
+              onChange={(e) => setImportEstablishmentId(e.target.value)}
+              options={establishmentOptions}
+              required
+            />
+            <div className="flex gap-2 pt-2">
+              <Button variant="primary" onClick={handleConfirmImport} disabled={!importEstablishmentId}>
+                {t('common.import')}
+              </Button>
+              <Button variant="secondary" onClick={() => setImportStep('intro')}>
+                {t('employees.importBack')}
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Establishment Modal - Add */}
