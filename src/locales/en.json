@@ -571,6 +571,7 @@
   "evaluation.managerSignature": "Manager signature",
   "evaluation.employeeSignature": "Employee signature",
   "toast.evaluationSigned": "Signature saved",
+  "toast.interviewSigned": "Signature saved",
   "professionalInterview.mobility.none": "No mobility",
   "professionalInterview.mobility.internal": "Internal mobility",
   "professionalInterview.mobility.external": "External mobility",
