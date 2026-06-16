@@ -4,12 +4,13 @@ import { AppProvider, ToastProvider } from '@/context';
 import { useNavigation } from '@/hooks';
 import { Navigation } from '@/components/layout';
 import { EmployeeList } from '@/components/employees';
-import { SemesterList, SemesterTeamView } from '@/components/semesters';
+import { SemesterTeamView } from '@/components/semesters';
+import { CampaignList } from '@/components/campaigns';
 import { EvaluationView, MyEvaluationsView } from '@/components/evaluations';
 import { TemplateList } from '@/components/templates';
 import { NineBoxView } from '@/components/nine-box';
 import { SettingsView } from '@/components/admin';
-import { ProfessionalCampaignList, ProfessionalTeamView, ProfessionalInterviewView, MyProfessionalInterviewsView } from '@/components/professional-interviews';
+import { ProfessionalTeamView, ProfessionalInterviewView, MyProfessionalInterviewsView } from '@/components/professional-interviews';
 import { colors } from '@/constants/colors';
 
 // ============================================
@@ -37,7 +38,7 @@ const AppContent: React.FC = () => {
   const renderView = () => {
     switch (currentView) {
       case 'semesters':
-        return <SemesterList />;
+        return <CampaignList />;
       case 'semester-team':
         return <SemesterTeamView />;
       case 'team':
@@ -53,7 +54,7 @@ const AppContent: React.FC = () => {
       case 'settings':
         return <SettingsView />;
       case 'professional-campaigns':
-        return <ProfessionalCampaignList />;
+        return <CampaignList />;
       case 'professional-team':
         return <ProfessionalTeamView />;
       case 'professional-interview':
@@ -61,7 +62,7 @@ const AppContent: React.FC = () => {
       case 'my-professional-interviews':
         return <MyProfessionalInterviewsView />;
       default:
-        return <SemesterList />;
+        return <CampaignList />;
     }
   };
 

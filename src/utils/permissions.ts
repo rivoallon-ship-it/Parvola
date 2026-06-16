@@ -19,10 +19,10 @@ export const getNavItems = (role: UserRole): ViewType[] => {
   switch (role) {
     case 'admin':
     case 'rh':
-      return ['semesters', 'nine-box', 'team', 'templates', 'professional-campaigns', 'settings'];
+      return ['semesters', 'nine-box', 'team', 'templates', 'settings'];
     case 'directeur':
     case 'manager':
-      return ['semesters', 'nine-box', 'team', 'professional-campaigns'];
+      return ['semesters', 'nine-box', 'team'];
     case 'employee':
       return ['my-evaluations', 'my-professional-interviews'];
   }

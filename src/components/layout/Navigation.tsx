@@ -15,7 +15,6 @@ const ALL_NAV_ITEMS: Array<{ key: ViewType; icon: React.ElementType; labelKey: s
   { key: 'nine-box', icon: LayoutGrid, labelKey: 'nav.matrix' },
   { key: 'team', icon: Users, labelKey: 'nav.team' },
   { key: 'templates', icon: FileText, labelKey: 'nav.position' },
-  { key: 'professional-campaigns', icon: Briefcase, labelKey: 'nav.professionalCampaigns' },
   { key: 'my-evaluations', icon: ClipboardList, labelKey: 'nav.myEvaluations' },
   { key: 'my-professional-interviews', icon: Briefcase, labelKey: 'nav.myProfessionalInterviews' },
   { key: 'settings', icon: Settings, labelKey: 'nav.settings' },
