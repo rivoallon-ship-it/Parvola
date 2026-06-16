@@ -275,7 +275,7 @@
   "templates.deletePositionConfirm": "¿Eliminar este puesto y todas sus plantillas?",
   "templates.deleteTemplateConfirm": "¿Eliminar esta plantilla?",
   "templates.templateCount": "plantilla(s)",
-  "templates.addTemplate": "Agregar una plantilla",
+  "templates.addTemplate": "Crear un modelo de objetivo",
   "templates.blankTemplate": "Plantilla en blanco",
   "templates.createFromScratch": "Crear desde cero",
   "templates.aiAssistant": "Asistente IA",

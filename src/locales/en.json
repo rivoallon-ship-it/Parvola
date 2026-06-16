@@ -276,7 +276,7 @@
   "templates.deletePositionConfirm": "Delete this position and all its templates?",
   "templates.deleteTemplateConfirm": "Delete this template?",
   "templates.templateCount": "template(s)",
-  "templates.addTemplate": "Add a template",
+  "templates.addTemplate": "Create an objective template",
   "templates.blankTemplate": "Blank template",
   "templates.createFromScratch": "Create from scratch",
   "templates.aiAssistant": "AI Assistant",
