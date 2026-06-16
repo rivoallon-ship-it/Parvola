@@ -361,7 +361,7 @@ export interface EmployeeActions {
   addEmployee: (employee: NewEmployeeForm) => Promise<void>;
   updateEmployee: (employee: Employee) => Promise<void>;
   deleteEmployee: (id: string) => Promise<void>;
-  importEmployees: (employees: Omit<Employee, 'id'>[], establishmentId?: string) => Promise<void>;
+  importEmployees: (employees: Omit<Employee, 'id'>[], establishmentId?: string) => Promise<Employee[]>;
   setEmployees: (employees: Employee[]) => void;
 }
 
@@ -478,7 +478,7 @@ export interface AppActions {
   addEmployee: (employee: NewEmployeeForm) => Promise<void>;
   updateEmployee: (employee: Employee) => Promise<void>;
   deleteEmployee: (id: string) => Promise<void>;
-  importEmployees: (employees: Omit<Employee, 'id'>[], establishmentId?: string) => Promise<void>;
+  importEmployees: (employees: Omit<Employee, 'id'>[], establishmentId?: string) => Promise<Employee[]>;
   addSemester: (semester: NewSemesterForm) => Promise<void>;
   deleteSemester: (id: string) => Promise<void>;
   addObjective: (employeeId: string, semesterId: string) => Promise<void>;
