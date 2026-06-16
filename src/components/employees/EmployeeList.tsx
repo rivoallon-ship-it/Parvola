@@ -8,6 +8,7 @@ import { EmployeeCard } from './EmployeeCard';
 import { EmployeeForm } from './EmployeeForm';
 import { EstablishmentCard, EstablishmentForm, TeamForm } from '@/components/organization';
 import { parseEmployeesFromExcel, downloadEmployeeTemplate } from '@/services/excel';
+import { sendEmployeeInvitation } from '@/services/supabase-data';
 import { useNavigation, useEmployees, useOrganization, useTemplates, useUser, useConfirmDialog, useToast } from '@/hooks';
 import { canEditEmployees, getEmployeesInScope } from '@/utils/permissions';
 import { ConfirmDialog } from '@/components/common';
@@ -38,9 +39,11 @@ export const EmployeeList: React.FC = () => {
 
   // Import modal state
   const [showImportModal, setShowImportModal] = useState(false);
-  const [importStep, setImportStep] = useState<'intro' | 'configure'>('intro');
+  const [importStep, setImportStep] = useState<'intro' | 'configure' | 'invite'>('intro');
   const [importEstablishmentId, setImportEstablishmentId] = useState<string>('');
   const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
+  const [importedWithEmail, setImportedWithEmail] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [sendingInvites, setSendingInvites] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { dialog, confirm, close } = useConfirmDialog();
@@ -134,22 +137,72 @@ export const EmployeeList: React.FC = () => {
     if (!pendingImportFile || !importEstablishmentId) return;
 
     try {
-      const imported = await parseEmployeesFromExcel(pendingImportFile);
-      if (imported.length > 0) {
-        await importEmployees(imported, importEstablishmentId);
-        toast.success(t('toast.importSuccess', { count: imported.length }));
-      } else {
+      const parsed = await parseEmployeesFromExcel(pendingImportFile);
+      if (parsed.length === 0) {
         toast.warning(t('toast.noEmployeesInFile'));
+        return;
+      }
+
+      // Résoudre établissements et équipes par nom (case-insensitive)
+      const resolved = parsed.map((emp) => {
+        const matchedEst = emp.establishmentName
+          ? establishments.find((e) => e.name.toLowerCase() === emp.establishmentName!.toLowerCase())
+          : undefined;
+        const estId = matchedEst?.id || importEstablishmentId;
+        const matchedTeam = emp.teamName
+          ? teams.find((t) => t.name.toLowerCase() === emp.teamName!.toLowerCase() && t.establishmentId === estId)
+          : undefined;
+        return {
+          name: emp.name,
+          position: emp.position,
+          photo: emp.photo,
+          email: emp.email,
+          establishmentId: estId,
+          teamId: matchedTeam?.id,
+        };
+      });
+
+      const created = await importEmployees(resolved, undefined);
+      toast.success(t('toast.importSuccess', { count: created.length }));
+
+      // Préparer les invitations pour les employés avec email
+      const withEmail = (created as { id: string; name: string; email?: string }[])
+        .filter((e) => !!e.email)
+        .map((e) => ({ id: e.id, name: e.name, email: e.email! }));
+
+      setPendingImportFile(null);
+
+      if (withEmail.length > 0) {
+        setImportedWithEmail(withEmail);
+        setImportStep('invite');
+      } else {
+        setShowImportModal(false);
+        setImportStep('intro');
+        setImportEstablishmentId('');
       }
     } catch (error) {
       console.error('Import error:', error);
       toast.error(t('toast.importError'));
     }
+  };
 
+  const handleSendInvites = async () => {
+    setSendingInvites(true);
+    let sent = 0;
+    for (const emp of importedWithEmail) {
+      try {
+        await sendEmployeeInvitation(emp.email, emp.name, 'employee', emp.id);
+        sent++;
+      } catch (err) {
+        console.error('Invite error for', emp.email, err);
+      }
+    }
+    setSendingInvites(false);
+    toast.success(t('toast.importSuccess', { count: sent }));
     setShowImportModal(false);
     setImportStep('intro');
-    setPendingImportFile(null);
     setImportEstablishmentId('');
+    setImportedWithEmail([]);
   };
 
   const handleCancelImport = () => {
@@ -157,6 +210,7 @@ export const EmployeeList: React.FC = () => {
     setImportStep('intro');
     setPendingImportFile(null);
     setImportEstablishmentId('');
+    setImportedWithEmail([]);
   };
 
   // ========== Handlers Employee ==========
@@ -427,21 +481,12 @@ export const EmployeeList: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    <tr>
-                      <td className="px-3 py-2 font-mono text-gray-400">A</td>
-                      <td className="px-3 py-2 text-gray-700">{t('employees.importColFirstName')}</td>
-                      <td className="px-3 py-2 text-gray-500">Sophie</td>
-                    </tr>
-                    <tr>
-                      <td className="px-3 py-2 font-mono text-gray-400">B</td>
-                      <td className="px-3 py-2 text-gray-700">{t('employees.importColLastName')}</td>
-                      <td className="px-3 py-2 text-gray-500">Laurent</td>
-                    </tr>
-                    <tr>
-                      <td className="px-3 py-2 font-mono text-gray-400">C</td>
-                      <td className="px-3 py-2 text-gray-700">{t('employees.importColPositionOptional')}</td>
-                      <td className="px-3 py-2 text-gray-500">Cheffe de cuisine</td>
-                    </tr>
+                    <tr><td className="px-3 py-2 font-mono text-gray-400">A</td><td className="px-3 py-2 text-gray-700">{t('employees.importColFirstName')}</td><td className="px-3 py-2 text-gray-500">Sophie</td></tr>
+                    <tr><td className="px-3 py-2 font-mono text-gray-400">B</td><td className="px-3 py-2 text-gray-700">{t('employees.importColLastName')}</td><td className="px-3 py-2 text-gray-500">Laurent</td></tr>
+                    <tr><td className="px-3 py-2 font-mono text-gray-400">C</td><td className="px-3 py-2 text-gray-700">{t('employees.importColPositionOptional')}</td><td className="px-3 py-2 text-gray-500">Cheffe de cuisine</td></tr>
+                    <tr><td className="px-3 py-2 font-mono text-gray-400">D</td><td className="px-3 py-2 text-gray-700">{t('employees.importColEmailOptional')}</td><td className="px-3 py-2 text-gray-500">sophie@resto.fr</td></tr>
+                    <tr><td className="px-3 py-2 font-mono text-gray-400">E</td><td className="px-3 py-2 text-gray-700">{t('employees.importColEstablishmentOptional')}</td><td className="px-3 py-2 text-gray-500">Paris Centre</td></tr>
+                    <tr><td className="px-3 py-2 font-mono text-gray-400">F</td><td className="px-3 py-2 text-gray-700">{t('employees.importColTeamOptional')}</td><td className="px-3 py-2 text-gray-500">Cuisine</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -468,25 +513,54 @@ export const EmployeeList: React.FC = () => {
               </Button>
             </div>
           </div>
-        ) : (
+        ) : importStep === 'configure' ? (
           <div className="space-y-4">
             <p className="text-gray-600">
               {t('employees.importSelectedFile')} : <strong>{pendingImportFile?.name}</strong>
             </p>
-            <p className="text-sm text-gray-500">{t('employees.importDescription')}</p>
             <Select
-              label={t('employees.importDestination')}
+              label={t('employees.importFallbackEstablishment')}
               value={importEstablishmentId}
               onChange={(e) => setImportEstablishmentId(e.target.value)}
               options={establishmentOptions}
               required
             />
+            <p className="text-xs text-gray-400">{t('employees.importDescription')}</p>
             <div className="flex gap-2 pt-2">
               <Button variant="primary" onClick={handleConfirmImport} disabled={!importEstablishmentId}>
                 {t('common.import')}
               </Button>
               <Button variant="secondary" onClick={() => setImportStep('intro')}>
                 {t('employees.importBack')}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          /* Étape invite */
+          <div className="space-y-4">
+            <p className="text-gray-600">
+              {importedWithEmail.length > 0
+                ? t('employees.importInviteInfo', { count: importedWithEmail.length })
+                : t('employees.importInviteNone')}
+            </p>
+            {importedWithEmail.length > 0 && (
+              <ul className="max-h-48 overflow-y-auto space-y-1 text-sm text-gray-600 border border-gray-100 rounded-lg p-3 bg-gray-50">
+                {importedWithEmail.map((e) => (
+                  <li key={e.id} className="flex justify-between gap-2">
+                    <span className="font-medium">{e.name}</span>
+                    <span className="text-gray-400">{e.email}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex gap-2 pt-2">
+              {importedWithEmail.length > 0 && (
+                <Button variant="primary" onClick={handleSendInvites} disabled={sendingInvites}>
+                  {sendingInvites ? t('common.loading') : t('employees.importSendInvites', { count: importedWithEmail.length })}
+                </Button>
+              )}
+              <Button variant="secondary" onClick={handleCancelImport}>
+                {importedWithEmail.length > 0 ? t('employees.importSkipInvites') : t('common.close')}
               </Button>
             </div>
           </div>

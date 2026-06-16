@@ -63,9 +63,10 @@ export const EmployeeProvider: React.FC<EmployeeProviderProps> = ({ children, in
     dispatch({ type: 'REMOVE_EMPLOYEE', payload: id });
   }, []);
 
-  const importEmployees = useCallback(async (imported: Omit<Employee, 'id'>[], establishmentId?: string) => {
+  const importEmployees = useCallback(async (imported: Omit<Employee, 'id'>[], establishmentId?: string): Promise<Employee[]> => {
     const created = await insertEmployees(imported, establishmentId);
     dispatch({ type: 'ADD_EMPLOYEES', payload: created });
+    return created;
   }, []);
 
   const value: EmployeeContextType = {

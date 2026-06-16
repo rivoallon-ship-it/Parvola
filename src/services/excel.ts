@@ -11,6 +11,9 @@ export interface ImportedEmployee {
   name: string;
   position: string;
   photo: string;
+  email?: string;
+  establishmentName?: string;
+  teamName?: string;
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -20,8 +23,8 @@ const ALLOWED_EXTENSIONS = ['.xlsx', '.xls', '.csv'];
 /**
  * Parse un fichier Excel et extrait les employés.
  * Format attendu (1re ligne = en-têtes, ignorée) :
- *   Colonne A = Prénom, Colonne B = Nom, Colonne C = Poste.
- * Rétrocompatible : si la colonne C est vide, le poste est lu en colonne D.
+ *   A = Prénom, B = Nom, C = Poste, D = Email, E = Établissement, F = Équipe.
+ * Rétrocompatible : ancien format 4 colonnes (poste en D) toujours accepté.
  */
 export const parseEmployeesFromExcel = async (file: File): Promise<ImportedEmployee[]> => {
   // Validate file size
@@ -60,8 +63,19 @@ export const parseEmployeesFromExcel = async (file: File): Promise<ImportedEmplo
 
     const firstName = sanitizeCell(row[0]);
     const lastName = sanitizeCell(row[1]);
-    // Poste en colonne C (nouveau format), repli sur colonne D (ancien format).
-    const position = sanitizeCell(row[2]) || sanitizeCell(row[3]);
+    const colC = sanitizeCell(row[2]);
+    const colD = sanitizeCell(row[3]);
+    const colE = sanitizeCell(row[4]);
+    const colF = sanitizeCell(row[5]);
+
+    const looksLikeEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+
+    // Nouveau format : A=Prénom B=Nom C=Poste D=Email E=Établissement F=Équipe
+    // Rétrocompat : ancien format avait le poste en D (colC vide + colD sans @)
+    const position = colC || (looksLikeEmail(colD) ? '' : colD);
+    const email = looksLikeEmail(colD) ? colD : '';
+    const establishmentName = colE;
+    const teamName = colF;
 
     const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
 
@@ -70,6 +84,9 @@ export const parseEmployeesFromExcel = async (file: File): Promise<ImportedEmplo
         name: fullName,
         position,
         photo: getRandomEmoji(),
+        ...(email && { email }),
+        ...(establishmentName && { establishmentName }),
+        ...(teamName && { teamName }),
       });
     }
   }
@@ -86,13 +103,16 @@ export const downloadEmployeeTemplate = (): void => {
     t('excel.templateFirstName'),
     t('excel.templateLastName'),
     t('excel.templatePosition'),
+    t('excel.templateEmail'),
+    t('excel.templateEstablishment'),
+    t('excel.templateTeam'),
   ];
   const examples = [
-    ['Sophie', 'Laurent', 'Cheffe de cuisine'],
-    ['Marc', 'Dubois', 'Serveur'],
+    ['Sophie', 'Laurent', 'Cheffe de cuisine', 'sophie.laurent@restaurant.fr', 'Paris Centre', 'Cuisine'],
+    ['Marc', 'Dubois', 'Serveur', 'marc.dubois@restaurant.fr', 'Paris Centre', 'Salle'],
   ];
   const worksheet = XLSX.utils.aoa_to_sheet([headers, ...examples]);
-  worksheet['!cols'] = [{ wch: 20 }, { wch: 20 }, { wch: 28 }];
+  worksheet['!cols'] = [{ wch: 18 }, { wch: 18 }, { wch: 24 }, { wch: 30 }, { wch: 22 }, { wch: 18 }];
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, t('excel.templateSheetName'));
   XLSX.writeFile(workbook, 'modele-import-employes.xlsx');
