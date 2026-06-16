@@ -276,7 +276,7 @@
   "templates.deletePositionConfirm": "Supprimer ce poste et tous ses templates ?",
   "templates.deleteTemplateConfirm": "Supprimer ce template ?",
   "templates.templateCount": "template(s)",
-  "templates.addTemplate": "Ajouter un template",
+  "templates.addTemplate": "Créer un modèle d'objectif",
   "templates.blankTemplate": "Template vierge",
   "templates.createFromScratch": "Créer de zéro",
   "templates.aiAssistant": "Assistant IA",
