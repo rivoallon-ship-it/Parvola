@@ -22,6 +22,8 @@ interface EmployeeFormProps {
   onCancel: () => void;
   onDelete?: () => void;
   isEditing?: boolean;
+  /** Render without the outer Card wrapper (e.g. when placed inside a Modal). */
+  bare?: boolean;
 }
 
 export const EmployeeForm: React.FC<EmployeeFormProps> = ({
@@ -34,6 +36,7 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
   onCancel,
   onDelete,
   isEditing = false,
+  bare = false,
 }) => {
   const { t } = useTranslation();
   const { currentUser } = useUser();
@@ -138,8 +141,8 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
     }
   };
 
-  return (
-    <Card borderColor={isEditing ? colors.warning : undefined}>
+  const formContent = (
+    <>
       <div className="flex justify-between items-start mb-4">
         <h3 className="text-lg font-semibold">
           {isEditing ? t('employeeForm.editTitle') : t('employeeForm.addTitle')}
@@ -248,6 +251,16 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
           </Button>
         </div>
       </div>
+    </>
+  );
+
+  if (bare) {
+    return formContent;
+  }
+
+  return (
+    <Card borderColor={isEditing ? colors.warning : undefined}>
+      {formContent}
     </Card>
   );
 };

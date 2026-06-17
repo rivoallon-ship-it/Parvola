@@ -421,16 +421,20 @@ export const EmployeeList: React.FC = () => {
         />
       </div>
 
-      {/* Add Employee Form */}
-      {showAddEmployeeForm && canEdit && (
+      {/* Add Employee Modal */}
+      <Modal
+        isOpen={showAddEmployeeForm && canEdit}
+        onClose={() => setShowAddEmployeeForm(false)}
+      >
         <EmployeeForm
+          bare
           teams={teams}
           establishments={establishments}
           positions={positions}
           onSubmit={handleAddEmployee as (data: NewEmployeeForm | Employee) => void}
           onCancel={() => setShowAddEmployeeForm(false)}
         />
-      )}
+      </Modal>
 
       {/* Edit Employee Form */}
       {editingEmployee && (
