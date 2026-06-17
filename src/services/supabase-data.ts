@@ -738,6 +738,47 @@ export async function sendEmployeeInvitation(
   return { userId: result.user.id };
 }
 
+export async function fetchInvitationStatuses(): Promise<Record<string, 'registered' | 'invited'>> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const res = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invitation-status`,
+    {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch invitation statuses');
+  }
+
+  return res.json();
+}
+
+export async function resendInvitation(employeeId: string): Promise<void> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const res = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/resend-invitation`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ employeeId }),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to resend invitation');
+  }
+}
+
 // ---------- Bulk fetch for initial load ----------
 
 export async function fetchAllData() {

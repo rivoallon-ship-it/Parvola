@@ -9,11 +9,23 @@ import { colors } from '@/constants/colors';
 // Composant EmployeeCard
 // ============================================
 
+export type InvitationStatus = 'registered' | 'invited' | 'not_invited' | 'no_email';
+
+const STATUS_STYLES: Record<InvitationStatus, { labelKey: string; classes: string }> = {
+  registered: { labelKey: 'employees.statusRegistered', classes: 'bg-emerald-100 text-emerald-700' },
+  invited: { labelKey: 'employees.statusInvited', classes: 'bg-amber-100 text-amber-700' },
+  not_invited: { labelKey: 'employees.statusNotInvited', classes: 'bg-gray-100 text-gray-500' },
+  no_email: { labelKey: 'employees.statusNotInvited', classes: 'bg-gray-100 text-gray-400' },
+};
+
 interface EmployeeCardProps {
   employee: Employee;
   onEdit?: () => void;
   onViewEvaluations: () => void;
   draggable?: boolean;
+  invitationStatus?: InvitationStatus;
+  onResendInvite?: () => void;
+  onSendInvite?: () => void;
 }
 
 export const EmployeeCard: React.FC<EmployeeCardProps> = ({
@@ -21,6 +33,9 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
   onEdit,
   onViewEvaluations,
   draggable = false,
+  invitationStatus,
+  onResendInvite,
+  onSendInvite,
 }) => {
   const { t } = useTranslation();
   const handleDragStart = (e: React.DragEvent) => {
@@ -67,6 +82,37 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({
             {employee.name}
           </h3>
           <p className="text-sm text-gray-500">{employee.position}</p>
+          {invitationStatus && (
+            <div className="flex items-center gap-2 mt-1.5">
+              <span
+                className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_STYLES[invitationStatus].classes}`}
+              >
+                {t(STATUS_STYLES[invitationStatus].labelKey)}
+              </span>
+              {invitationStatus === 'invited' && onResendInvite && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onResendInvite();
+                  }}
+                  className="text-xs font-medium text-teal-600 hover:underline"
+                >
+                  {t('employees.resendInvite')}
+                </button>
+              )}
+              {invitationStatus === 'not_invited' && onSendInvite && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSendInvite();
+                  }}
+                  className="text-xs font-medium text-teal-600 hover:underline"
+                >
+                  {t('employees.sendInvite')}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </Card>
