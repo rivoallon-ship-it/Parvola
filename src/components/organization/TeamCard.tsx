@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { Team, Employee } from '@/types';
 import { Card } from '@/components/common';
 import { colors } from '@/constants/colors';
-import { EmployeeCard } from '@/components/employees/EmployeeCard';
+import { EmployeeCard, type InvitationStatus } from '@/components/employees/EmployeeCard';
 
 // ============================================
 // Carte Équipe (avec employés imbriqués)
@@ -18,6 +18,9 @@ interface TeamCardProps {
   onViewEmployeeEvaluations: (employee: Employee) => void;
   onDropEmployee?: (employeeId: string, establishmentId: string, teamId?: string) => void;
   establishmentId: string;
+  getInvitationStatus?: (employee: Employee) => InvitationStatus;
+  onResendInvite?: (employee: Employee) => void;
+  onSendInvite?: (employee: Employee) => void;
 }
 
 export const TeamCard: React.FC<TeamCardProps> = ({
@@ -28,6 +31,9 @@ export const TeamCard: React.FC<TeamCardProps> = ({
   onViewEmployeeEvaluations,
   onDropEmployee,
   establishmentId,
+  getInvitationStatus,
+  onResendInvite,
+  onSendInvite,
 }) => {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(true);
@@ -117,6 +123,9 @@ export const TeamCard: React.FC<TeamCardProps> = ({
               onEdit={onEditEmployee ? () => onEditEmployee(employee) : undefined}
               onViewEvaluations={() => onViewEmployeeEvaluations(employee)}
               draggable
+              invitationStatus={getInvitationStatus?.(employee)}
+              onResendInvite={onResendInvite ? () => onResendInvite(employee) : undefined}
+              onSendInvite={onSendInvite ? () => onSendInvite(employee) : undefined}
             />
           ))}
         </div>

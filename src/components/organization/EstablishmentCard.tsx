@@ -5,7 +5,7 @@ import type { Establishment, Team, Employee } from '@/types';
 import { Card, Button } from '@/components/common';
 import { colors } from '@/constants/colors';
 import { TeamCard } from './TeamCard';
-import { EmployeeCard } from '@/components/employees/EmployeeCard';
+import { EmployeeCard, type InvitationStatus } from '@/components/employees/EmployeeCard';
 
 // ============================================
 // Carte Établissement (avec équipes et employés imbriqués)
@@ -21,6 +21,9 @@ interface EstablishmentCardProps {
   onEditEmployee?: (employee: Employee) => void;
   onViewEmployeeEvaluations: (employee: Employee) => void;
   onDropEmployee?: (employeeId: string, establishmentId: string, teamId?: string) => void;
+  getInvitationStatus?: (employee: Employee) => InvitationStatus;
+  onResendInvite?: (employee: Employee) => void;
+  onSendInvite?: (employee: Employee) => void;
 }
 
 export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
@@ -33,6 +36,9 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
   onEditEmployee,
   onViewEmployeeEvaluations,
   onDropEmployee,
+  getInvitationStatus,
+  onResendInvite,
+  onSendInvite,
 }) => {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(true);
@@ -141,6 +147,9 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
               onViewEmployeeEvaluations={onViewEmployeeEvaluations}
               onDropEmployee={onDropEmployee}
               establishmentId={establishment.id}
+              getInvitationStatus={getInvitationStatus}
+              onResendInvite={onResendInvite}
+              onSendInvite={onSendInvite}
             />
           ))}
 
@@ -160,6 +169,9 @@ export const EstablishmentCard: React.FC<EstablishmentCardProps> = ({
                     onEdit={onEditEmployee ? () => onEditEmployee(employee) : undefined}
                     onViewEvaluations={() => onViewEmployeeEvaluations(employee)}
                     draggable
+                    invitationStatus={getInvitationStatus?.(employee)}
+                    onResendInvite={onResendInvite ? () => onResendInvite(employee) : undefined}
+                    onSendInvite={onSendInvite ? () => onSendInvite(employee) : undefined}
                   />
                 ))}
               </div>

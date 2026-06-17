@@ -1,14 +1,14 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Search, FileSpreadsheet, Users, Building2, Download, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Employee, NewEmployeeForm, Establishment, Team, NewEstablishmentForm, NewTeamForm } from '@/types';
 import { Button, Input, EmptyState, Modal, Select } from '@/components/common';
 import { PageHeader } from '@/components/layout';
-import { EmployeeCard } from './EmployeeCard';
+import { EmployeeCard, type InvitationStatus } from './EmployeeCard';
 import { EmployeeForm } from './EmployeeForm';
 import { EstablishmentCard, EstablishmentForm, TeamForm } from '@/components/organization';
 import { parseEmployeesFromExcel, downloadEmployeeTemplate } from '@/services/excel';
-import { sendEmployeeInvitation } from '@/services/supabase-data';
+import { sendEmployeeInvitation, fetchInvitationStatuses, resendInvitation } from '@/services/supabase-data';
 import { useNavigation, useEmployees, useOrganization, useTemplates, useUser, useConfirmDialog, useToast } from '@/hooks';
 import { canEditEmployees, getEmployeesInScope } from '@/utils/permissions';
 import { ConfirmDialog } from '@/components/common';
@@ -47,6 +47,49 @@ export const EmployeeList: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { dialog, confirm, close } = useConfirmDialog();
+
+  // Suivi des invitations (inscrit / invité / non invité)
+  const [invitationStatuses, setInvitationStatuses] = useState<Record<string, 'registered' | 'invited'>>({});
+
+  const refreshInvitationStatuses = () => {
+    if (!canEdit) return;
+    fetchInvitationStatuses()
+      .then(setInvitationStatuses)
+      .catch((err) => console.error('Failed to fetch invitation statuses:', err));
+  };
+
+  useEffect(() => {
+    refreshInvitationStatuses();
+  }, [canEdit]);
+
+  const getInvitationStatus = (employee: Employee): InvitationStatus => {
+    if (!employee.email) return 'no_email';
+    const remote = invitationStatuses[employee.id];
+    if (remote === 'registered') return 'registered';
+    if (remote === 'invited') return 'invited';
+    return 'not_invited';
+  };
+
+  const handleResendInvite = async (employee: Employee) => {
+    try {
+      await resendInvitation(employee.id);
+      toast.success(t('toast.invitationResent', { name: employee.name }));
+      refreshInvitationStatuses();
+    } catch (err) {
+      toast.error((err as Error).message || t('toast.genericError'));
+    }
+  };
+
+  const handleSendInvite = async (employee: Employee) => {
+    if (!employee.email) return;
+    try {
+      await sendEmployeeInvitation(employee.email, employee.name, 'employee', employee.id);
+      toast.success(t('toast.invitationSent', { name: employee.name }));
+      refreshInvitationStatuses();
+    } catch (err) {
+      toast.error((err as Error).message || t('toast.genericError'));
+    }
+  };
 
   // Filtrage par recherche - bidirectionnel (haut vers bas ET bas vers haut)
   const matchesSearch = (text: string) =>
@@ -203,6 +246,7 @@ export const EmployeeList: React.FC = () => {
     setImportStep('intro');
     setImportEstablishmentId('');
     setImportedWithEmail([]);
+    refreshInvitationStatuses();
   };
 
   const handleCancelImport = () => {
@@ -418,6 +462,9 @@ export const EmployeeList: React.FC = () => {
               onEditEmployee={canEdit ? handleEditEmployee : undefined}
               onViewEmployeeEvaluations={handleViewEvaluations}
               onDropEmployee={canEdit ? handleDropEmployee : undefined}
+              getInvitationStatus={canEdit ? getInvitationStatus : undefined}
+              onResendInvite={canEdit ? handleResendInvite : undefined}
+              onSendInvite={canEdit ? handleSendInvite : undefined}
             />
           ))}
         </div>
@@ -440,6 +487,9 @@ export const EmployeeList: React.FC = () => {
                 onEdit={canEdit ? () => handleEditEmployee(emp) : undefined}
                 onViewEvaluations={() => handleViewEvaluations(emp)}
                 draggable={canEdit}
+                invitationStatus={canEdit ? getInvitationStatus(emp) : undefined}
+                onResendInvite={canEdit ? () => handleResendInvite(emp) : undefined}
+                onSendInvite={canEdit ? () => handleSendInvite(emp) : undefined}
               />
             ))}
           </div>
