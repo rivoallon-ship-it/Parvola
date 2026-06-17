@@ -198,7 +198,7 @@ export const EmployeeList: React.FC = () => {
       }
     }
     setSendingInvites(false);
-    toast.success(t('toast.importSuccess', { count: sent }));
+    toast.success(t('toast.invitesSent', { count: sent }));
     setShowImportModal(false);
     setImportStep('intro');
     setImportEstablishmentId('');

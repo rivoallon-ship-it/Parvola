@@ -539,6 +539,7 @@
   "toast.evaluationValidated": "Évaluation validée",
   "toast.objectivesDuplicated": "Objectifs dupliqués avec succès",
   "toast.importSuccess": "{{count}} employé(s) importé(s) avec succès",
+  "toast.invitesSent": "{{count}} invitation(s) envoyée(s)",
   "toast.importError": "Erreur lors de l'import du fichier",
   "toast.noEmployeesInFile": "Aucun employé trouvé dans le fichier",
   "toast.createEstablishmentFirst": "Veuillez créer un établissement avant d'importer",
