@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
 
     if (inviteError) {
       console.error("Resend invitation failed:", inviteError.message);
-      return new Response(JSON.stringify({ error: "Failed to resend invitation" }), {
+      return new Response(JSON.stringify({ error: inviteError.message || "Failed to resend invitation" }), {
         status: 400,
         headers: { ...cors, "Content-Type": "application/json" },
       });
