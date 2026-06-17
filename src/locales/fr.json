@@ -162,6 +162,8 @@
   "employeeForm.editTitle": "Modifier l'employé",
   "employeeForm.addTitle": "Ajouter un employé",
   "employeeForm.fullName": "Nom complet",
+  "employeeForm.firstName": "Prénom",
+  "employeeForm.lastName": "Nom",
   "employeeForm.position": "Poste",
   "employeeForm.selectPosition": "Sélectionner un poste",
   "employeeForm.createPositionFirst": "Veuillez créer un poste dans la section \"Poste\" avant d'ajouter un employé.",

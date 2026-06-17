@@ -162,6 +162,8 @@
   "employeeForm.editTitle": "Edit employee",
   "employeeForm.addTitle": "Add an employee",
   "employeeForm.fullName": "Full name",
+  "employeeForm.firstName": "First name",
+  "employeeForm.lastName": "Last name",
   "employeeForm.position": "Position",
   "employeeForm.selectPosition": "Select a position",
   "employeeForm.createPositionFirst": "Please create a position in the \"Position\" section before adding an employee.",
