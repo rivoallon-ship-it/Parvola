@@ -39,6 +39,18 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
   const { currentUser } = useUser();
   const showInvite = canInviteUsers(currentUser.role);
 
+  // Split the stored full name into first / last name for editing.
+  const splitName = (full: string): { first: string; last: string } => {
+    const parts = full.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return { first: '', last: '' };
+    if (parts.length === 1) return { first: parts[0], last: '' };
+    return { first: parts[0], last: parts.slice(1).join(' ') };
+  };
+
+  const initialName = splitName(employee?.name || '');
+  const [firstName, setFirstName] = useState(initialName.first);
+  const [lastName, setLastName] = useState(initialName.last);
+
   const [form, setForm] = useState<NewEmployeeForm>({
     name: employee?.name || '',
     position: employee?.position || '',
@@ -47,6 +59,8 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
     establishmentId: employee?.establishmentId || defaultEstablishmentId || '',
     teamId: employee?.teamId || '',
   });
+
+  const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
 
   const [inviteStatus, setInviteStatus] = useState<'idle' | 'loading' | 'sent' | 'already'>('idle');
   const [inviteError, setInviteError] = useState('');
@@ -68,7 +82,7 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
       // Derive role from position
       const pos = positions.find((p) => p.name === form.position);
       const role = pos?.role || 'employee';
-      await sendEmployeeInvitation(form.email, employee.name, role, employee.id);
+      await sendEmployeeInvitation(form.email, fullName || employee.name, role, employee.id);
       setInviteStatus('sent');
     } catch (err) {
       setInviteError((err as Error).message);
@@ -115,11 +129,12 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
   };
 
   const handleSubmit = () => {
-    if (!form.name.trim()) return;
+    if (!fullName) return;
+    const payload = { ...form, name: fullName };
     if (isEditing && employee) {
-      onSubmit({ ...employee, ...form });
+      onSubmit({ ...employee, ...payload });
     } else {
-      onSubmit(form);
+      onSubmit(payload);
     }
   };
 
@@ -136,12 +151,22 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
         )}
       </div>
       <div className="space-y-4">
-        <Input
-          type="text"
-          placeholder={t('employeeForm.fullName')}
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            type="text"
+            label={t('employeeForm.firstName')}
+            placeholder={t('employeeForm.firstName')}
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+          />
+          <Input
+            type="text"
+            label={t('employeeForm.lastName')}
+            placeholder={t('employeeForm.lastName')}
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+          />
+        </div>
         {positions.length > 0 ? (
           <Select
             label={t('employeeForm.position')}
