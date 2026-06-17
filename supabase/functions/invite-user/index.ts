@@ -205,8 +205,10 @@ Deno.serve(async (req) => {
       return null;
     }
 
+    const siteUrl = Deno.env.get("SITE_URL") || "https://parvola.vercel.app";
     const { data: newUser, error: createError } = await adminClient.auth.admin.inviteUserByEmail(email, {
       data: { name, role, photo: sanitizedPhoto },
+      redirectTo: `${siteUrl}/`,
     });
 
     let userId: string;

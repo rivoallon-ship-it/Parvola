@@ -145,8 +145,10 @@ Deno.serve(async (req) => {
       });
     }
 
+    const siteUrl = Deno.env.get("SITE_URL") || "https://parvola.vercel.app";
     const { error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(targetUser.user.email, {
       data: { name: targetProfile.name, role: targetProfile.role, photo: targetProfile.photo },
+      redirectTo: `${siteUrl}/`,
     });
 
     if (inviteError) {
