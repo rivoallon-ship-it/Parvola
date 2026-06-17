@@ -316,52 +316,6 @@ export const EvaluationView: React.FC = () => {
         </div>
       </Card>
 
-      {/* Employee Info Panel - Attendance & Compensation */}
-      {(selectedEmployee.salary !== undefined ||
-        selectedEmployee.lateCount !== undefined ||
-        selectedEmployee.unjustifiedAbsences !== undefined ||
-        selectedEmployee.justifiedAbsences !== undefined) && (
-        <Card>
-          <h3 className="text-sm font-semibold text-gray-500 mb-3">
-            {t('employeeInfo.attendanceTitle')}
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {selectedEmployee.salary !== undefined && (
-              <div className="text-center p-3 rounded-lg bg-emerald-50">
-                <p className="text-xs text-gray-500 mb-1">{t('employeeInfo.salary')}</p>
-                <p className="text-lg font-bold text-emerald-700">
-                  {selectedEmployee.salary.toLocaleString('fr-FR')} EUR
-                </p>
-              </div>
-            )}
-            {selectedEmployee.lateCount !== undefined && (
-              <div className="text-center p-3 rounded-lg bg-amber-50">
-                <p className="text-xs text-gray-500 mb-1">{t('employeeInfo.lateCount')}</p>
-                <p className="text-lg font-bold text-amber-700">
-                  {selectedEmployee.lateCount}
-                </p>
-              </div>
-            )}
-            {selectedEmployee.unjustifiedAbsences !== undefined && (
-              <div className="text-center p-3 rounded-lg bg-red-50">
-                <p className="text-xs text-gray-500 mb-1">{t('employeeInfo.unjustifiedAbsences')}</p>
-                <p className="text-lg font-bold text-red-700">
-                  {selectedEmployee.unjustifiedAbsences}
-                </p>
-              </div>
-            )}
-            {selectedEmployee.justifiedAbsences !== undefined && (
-              <div className="text-center p-3 rounded-lg bg-blue-50">
-                <p className="text-xs text-gray-500 mb-1">{t('employeeInfo.justifiedAbsences')}</p>
-                <p className="text-lg font-bold text-blue-700">
-                  {selectedEmployee.justifiedAbsences}
-                </p>
-              </div>
-            )}
-          </div>
-        </Card>
-      )}
-
       {/* Status Banners */}
       {selectedSemester && evalStatus === 'submitted' && (
         <div className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-amber-50 border-amber-200">
