@@ -35,6 +35,7 @@ export interface User {
 export interface UserState {
   currentUser: User | null;
   isAuthLoading: boolean;
+  needsOnboarding: boolean;
 }
 
 export interface CompanySignupForm {
@@ -73,6 +74,8 @@ export interface UserActions {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   signUp: (form: CompanySignupForm) => Promise<{ companyId: string; userId: string }>;
+  /** Set the password for an invited user, completing onboarding. */
+  completeOnboarding: (password: string) => Promise<void>;
 }
 
 export type UserContextType = UserState & UserActions;

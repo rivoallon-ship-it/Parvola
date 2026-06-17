@@ -8,13 +8,13 @@ import { OrganizationProvider } from './OrganizationContext';
 import { SemesterProvider } from './SemesterContext';
 import { TemplateProvider, useTemplateContext } from './TemplateContext';
 import { ProfessionalInterviewProvider } from './ProfessionalInterviewContext';
-import { LoginPage, SignupPage } from '@/components/auth';
+import { LoginPage, SignupPage, OnboardingPage } from '@/components/auth';
 import { colors } from '@/constants/colors';
 import type { Employee, Semester, ObjectiveTemplate, StorageData } from '@/types';
 
 // Auth gate — only renders children (DataLoader) when authenticated
 const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentUser, isAuthLoading } = useUserContext();
+  const { currentUser, isAuthLoading, needsOnboarding } = useUserContext();
   const { t } = useTranslation();
   const [authView, setAuthView] = useState<'login' | 'signup'>('login');
 
@@ -37,6 +37,11 @@ const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       return <SignupPage onSwitchToLogin={() => setAuthView('login')} />;
     }
     return <LoginPage onSwitchToSignup={() => setAuthView('signup')} />;
+  }
+
+  // Invited users have a session but must choose a password before entering.
+  if (needsOnboarding) {
+    return <OnboardingPage />;
   }
 
   return <>{children}</>;

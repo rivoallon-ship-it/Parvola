@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { arrivedViaInvite } from '@/lib/authRedirect';
 import { fetchProfile } from '@/services/supabase-data';
 import { signupCompany } from '@/services/signup';
 import type { UserContextType, User, UserRole, CompanySignupForm } from '@/types';
@@ -13,6 +14,9 @@ const UserContext = createContext<UserContextType | null>(null);
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  // When a user arrives via an invite/recovery link they have a session but no
+  // chosen password yet — gate them through the onboarding screen first.
+  const [needsOnboarding, setNeedsOnboarding] = useState(arrivedViaInvite);
 
   const loadProfile = useCallback(async (userId: string) => {
     try {
@@ -59,11 +63,23 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    setNeedsOnboarding(false);
   }, []);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setCurrentUser(null);
+    setNeedsOnboarding(false);
+  }, []);
+
+  const completeOnboarding = useCallback(async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+    setNeedsOnboarding(false);
+    // Clean the invite token from the URL so a refresh doesn't re-trigger it.
+    if (typeof window !== 'undefined' && window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
   }, []);
 
   const signUp = useCallback(async (form: CompanySignupForm) => {
@@ -79,9 +95,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value: UserContextType = {
     currentUser,
     isAuthLoading,
+    needsOnboarding,
     signIn,
     signOut,
     signUp,
+    completeOnboarding,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
