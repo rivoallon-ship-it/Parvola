@@ -15,22 +15,24 @@ import {
   Sparkles,
   Shield,
   ShieldAlert,
+  Pencil,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { AISuggestedObjective, ObjectiveTemplate, NineBoxRating } from '@/types';
+import type { AISuggestedObjective, ObjectiveTemplate, NineBoxRating, Employee, NewEmployeeForm } from '@/types';
 import { Card, Button, Modal, EmptyState, ConfirmDialog, Select, TextArea, EvaluationStatusBadge, DictationButton, SignaturePad } from '@/components/common';
 import { BackButton } from '@/components/layout';
 import { ObjectiveCard } from './ObjectiveCard';
 import { AIAssistant } from './AIAssistant';
 import { InterviewGuideModal } from './InterviewGuideModal';
 import { AIReviewModal } from './AIReviewModal';
-import { useNavigation, useEmployees, useSemesters, useTemplates, useConfirmDialog, useUser, useToast } from '@/hooks';
+import { EmployeeForm } from '@/components/employees/EmployeeForm';
+import { useNavigation, useEmployees, useOrganization, useSemesters, useTemplates, useConfirmDialog, useUser, useToast } from '@/hooks';
 import { printExport } from '@/services/excel';
 import { fetchCompany } from '@/services/supabase-data';
 import type { Company } from '@/types';
 import { colors } from '@/constants/colors';
 import { isEvaluationReadOnly } from '@/utils/helpers';
-import { canSubmitEvaluation, canValidateEvaluation, canViewNineBoxRatings, canViewBilanManager, canViewInterviewGuide, isEvaluator } from '@/utils/permissions';
+import { canSubmitEvaluation, canValidateEvaluation, canViewNineBoxRatings, canViewBilanManager, canViewInterviewGuide, isEvaluator, canEditEmployees } from '@/utils/permissions';
 import { NINE_BOX_CONFIG } from '@/constants/config';
 
 // ============================================
@@ -40,12 +42,15 @@ import { NINE_BOX_CONFIG } from '@/constants/config';
 export const EvaluationView: React.FC = () => {
   const { t } = useTranslation();
   const { selectedEmployee, selectedSemester, viewingSemester, setCurrentView, setSelectedEmployee, setSelectedSemester } = useNavigation();
-  const { employees } = useEmployees();
+  const { employees, updateEmployee } = useEmployees();
+  const { establishments, teams } = useOrganization();
   const { semesters, evaluations, addObjective, addObjectiveWithData, addObjectiveFromTemplate, updateObjective, deleteObjective, reorderObjectives, duplicateObjectives, updateEvaluationBilan, updateEvaluationRatings, submitEvaluation, validateEvaluation, signEvaluation } = useSemesters();
   const { templates, positions } = useTemplates();
   const { currentUser } = useUser();
   const toast = useToast();
   const userRole = currentUser.role;
+  const canEditProfile = canEditEmployees(userRole);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   const [company, setCompany] = useState<Company | null>(null);
 
@@ -257,6 +262,16 @@ export const EvaluationView: React.FC = () => {
     setNavDragOverIndex(null);
   };
 
+  const handleUpdateProfile = async (data: Employee) => {
+    await updateEmployee(data);
+    setSelectedEmployee(data);
+    setIsEditingProfile(false);
+    toast.success(t('toast.employeeUpdated'));
+  };
+
+  const establishmentName = establishments.find((e) => e.id === selectedEmployee.establishmentId)?.name;
+  const teamName = teams.find((tm) => tm.id === selectedEmployee.teamId)?.name;
+
   return (
     <div className="space-y-6">
       <BackButton
@@ -265,56 +280,81 @@ export const EvaluationView: React.FC = () => {
       />
 
       {/* Employee Header */}
-      <Card>
-        <div className="flex items-center gap-6">
-          <div className="text-6xl">{selectedEmployee.photo}</div>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold" style={{ color: colors.btn.primary }}>
-              {selectedEmployee.name}
-            </h1>
-            <p className="text-gray-500 text-lg">{selectedEmployee.position}</p>
-          </div>
-          <div className="flex flex-col gap-2 items-end">
-            <Select
-              value={selectedSemester?.id || ''}
-              onChange={(e) => handleSemesterChange(e.target.value)}
-              options={[
-                { value: '', label: t('evaluation.selectSemester') },
-                ...selectableSemesters.map((s) => ({ value: s.id, label: s.name })),
-              ]}
-            />
-            {selectedSemester && (
+      {isEditingProfile ? (
+        <EmployeeForm
+          employee={selectedEmployee}
+          teams={teams}
+          establishments={establishments}
+          positions={positions}
+          onSubmit={handleUpdateProfile as (data: NewEmployeeForm | Employee) => void}
+          onCancel={() => setIsEditingProfile(false)}
+          isEditing
+        />
+      ) : (
+        <Card>
+          <div className="flex items-center gap-6">
+            <div className="text-6xl">{selectedEmployee.photo}</div>
+            <div className="flex-1">
               <div className="flex items-center gap-2">
-                <EvaluationStatusBadge status={evalStatus} />
-                {showAIReviewButton && (
-                  <Button variant="secondary" size="sm" onClick={() => setShowAIReview(true)}>
-                    <Shield size={14} className="mr-1" />
-                    {t('aiReview.button')}
-                  </Button>
-                )}
-                {showSubmit && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={handleSubmit}
-                    disabled={aiReviewBlocking}
-                    title={aiReviewBlocking ? t('aiReview.submitBlocked') : undefined}
-                  >
-                    <Send size={14} className="mr-1" />
-                    {t('evaluation.submit')}
-                  </Button>
-                )}
-                {showValidate && (
-                  <Button variant="primary" size="sm" onClick={handleValidate}>
-                    <CheckCircle size={14} className="mr-1" />
-                    {t('evaluation.validate')}
+                <h1 className="text-3xl font-bold" style={{ color: colors.btn.primary }}>
+                  {selectedEmployee.name}
+                </h1>
+                {canEditProfile && (
+                  <Button variant="secondary" size="sm" onClick={() => setIsEditingProfile(true)}>
+                    <Pencil size={14} className="mr-1" />
+                    {t('common.edit')}
                   </Button>
                 )}
               </div>
-            )}
+              <p className="text-gray-500 text-lg">{selectedEmployee.position}</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
+                {selectedEmployee.email && <span>{selectedEmployee.email}</span>}
+                {establishmentName && <span>{establishmentName}</span>}
+                {teamName && <span>{teamName}</span>}
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 items-end">
+              <Select
+                value={selectedSemester?.id || ''}
+                onChange={(e) => handleSemesterChange(e.target.value)}
+                options={[
+                  { value: '', label: t('evaluation.selectSemester') },
+                  ...selectableSemesters.map((s) => ({ value: s.id, label: s.name })),
+                ]}
+              />
+              {selectedSemester && (
+                <div className="flex items-center gap-2">
+                  <EvaluationStatusBadge status={evalStatus} />
+                  {showAIReviewButton && (
+                    <Button variant="secondary" size="sm" onClick={() => setShowAIReview(true)}>
+                      <Shield size={14} className="mr-1" />
+                      {t('aiReview.button')}
+                    </Button>
+                  )}
+                  {showSubmit && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleSubmit}
+                      disabled={aiReviewBlocking}
+                      title={aiReviewBlocking ? t('aiReview.submitBlocked') : undefined}
+                    >
+                      <Send size={14} className="mr-1" />
+                      {t('evaluation.submit')}
+                    </Button>
+                  )}
+                  {showValidate && (
+                    <Button variant="primary" size="sm" onClick={handleValidate}>
+                      <CheckCircle size={14} className="mr-1" />
+                      {t('evaluation.validate')}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       {/* Status Banners */}
       {selectedSemester && evalStatus === 'submitted' && (
