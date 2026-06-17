@@ -46,10 +46,6 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
     email: employee?.email || '',
     establishmentId: employee?.establishmentId || defaultEstablishmentId || '',
     teamId: employee?.teamId || '',
-    salary: employee?.salary,
-    lateCount: employee?.lateCount,
-    unjustifiedAbsences: employee?.unjustifiedAbsences,
-    justifiedAbsences: employee?.justifiedAbsences,
   });
 
   const [inviteStatus, setInviteStatus] = useState<'idle' | 'loading' | 'sent' | 'already'>('idle');
@@ -218,47 +214,6 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
             placeholder={t('employeeForm.rootEstablishment')}
           />
         )}
-        {/* Assiduité et rémunération */}
-        <div className="border-t border-gray-200 pt-4">
-          <p className="text-sm font-medium text-gray-700 mb-3">
-            {t('employeeInfo.attendanceTitle')}
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              type="number"
-              placeholder={t('employeeForm.salaryPlaceholder')}
-              label={t('employeeForm.salary')}
-              value={form.salary ?? ''}
-              onChange={(e) => setForm({ ...form, salary: e.target.value ? Number(e.target.value) : undefined })}
-              min={0}
-            />
-            <Input
-              type="number"
-              placeholder={t('employeeForm.lateCountPlaceholder')}
-              label={t('employeeForm.lateCount')}
-              value={form.lateCount ?? ''}
-              onChange={(e) => setForm({ ...form, lateCount: e.target.value ? Number(e.target.value) : undefined })}
-              min={0}
-            />
-            <Input
-              type="number"
-              placeholder={t('employeeForm.unjustifiedAbsencesPlaceholder')}
-              label={t('employeeForm.unjustifiedAbsences')}
-              value={form.unjustifiedAbsences ?? ''}
-              onChange={(e) => setForm({ ...form, unjustifiedAbsences: e.target.value ? Number(e.target.value) : undefined })}
-              min={0}
-            />
-            <Input
-              type="number"
-              placeholder={t('employeeForm.justifiedAbsencesPlaceholder')}
-              label={t('employeeForm.justifiedAbsences')}
-              value={form.justifiedAbsences ?? ''}
-              onChange={(e) => setForm({ ...form, justifiedAbsences: e.target.value ? Number(e.target.value) : undefined })}
-              min={0}
-            />
-          </div>
-        </div>
-
         <div className="flex gap-3 justify-end">
           <Button variant="secondary" onClick={onCancel}>
             {t('common.cancel')}
