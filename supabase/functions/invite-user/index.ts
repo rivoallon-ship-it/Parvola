@@ -188,21 +188,64 @@ Deno.serve(async (req) => {
     // 5. Create user via admin API
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Helper: find an existing auth user by email (admin API has no direct getByEmail)
+    async function findUserByEmail(targetEmail: string) {
+      const normalized = targetEmail.toLowerCase();
+      let page = 1;
+      const perPage = 1000;
+      // Iterate pages until we find the user or run out of results
+      for (let i = 0; i < 50; i++) {
+        const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage });
+        if (error || !data?.users?.length) return null;
+        const match = data.users.find((u) => (u.email || "").toLowerCase() === normalized);
+        if (match) return match;
+        if (data.users.length < perPage) return null;
+        page++;
+      }
+      return null;
+    }
+
     const { data: newUser, error: createError } = await adminClient.auth.admin.inviteUserByEmail(email, {
       data: { name, role, photo: sanitizedPhoto },
     });
 
+    let userId: string;
+
     if (createError) {
       console.error("User creation failed:", createError.message);
-      return new Response(JSON.stringify({ error: "Failed to create user" }), {
-        status: 400,
-        headers: { ...cors, "Content-Type": "application/json" },
-      });
+
+      // Common case: the auth account already exists (e.g. a prior invite
+      // created it but the profile link failed). Recover by reusing it.
+      const existing = await findUserByEmail(email);
+      if (!existing) {
+        return new Response(JSON.stringify({ error: createError.message || "Failed to create user" }), {
+          status: 400,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      // If a profile already exists for this account, the user is already invited.
+      const { data: existingProfile } = await adminClient
+        .from("profiles")
+        .select("id")
+        .eq("id", existing.id)
+        .maybeSingle();
+
+      if (existingProfile) {
+        return new Response(JSON.stringify({ error: "This email is already invited" }), {
+          status: 409,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+
+      userId = existing.id;
+    } else {
+      userId = newUser.user.id;
     }
 
     // 6. Create profile (inherit company_id from caller)
     const { error: profileError } = await adminClient.from("profiles").insert({
-      id: newUser.user.id,
+      id: userId,
       name,
       photo: sanitizedPhoto,
       role,
@@ -215,8 +258,10 @@ Deno.serve(async (req) => {
 
     if (profileError) {
       console.error("Profile creation failed:", profileError.message);
-      // Clean up: delete the auth user since profile creation failed
-      await adminClient.auth.admin.deleteUser(newUser.user.id);
+      // Clean up only if we created the auth user in this request
+      if (!createError) {
+        await adminClient.auth.admin.deleteUser(userId);
+      }
       return new Response(JSON.stringify({ error: "Failed to create user profile" }), {
         status: 500,
         headers: { ...cors, "Content-Type": "application/json" },
@@ -224,7 +269,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ user: { id: newUser.user.id, email: newUser.user.email } }),
+      JSON.stringify({ user: { id: userId, email } }),
       {
         status: 200,
         headers: { ...cors, "Content-Type": "application/json" },
