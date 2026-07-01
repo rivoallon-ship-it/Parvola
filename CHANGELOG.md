@@ -4,6 +4,64 @@ Toutes les modifications notables du projet Parvola (ex-Talent Review) sont docu
 
 ---
 
+## [1.11.0] — 2026-07-01
+
+### EPP — Lot A : preuve, verrouillage & remise
+
+Renforcement de l'entretien professionnel (EPP) comme **preuve opposable**,
+sans toucher au domaine Talent Review (séparation stricte conservée).
+
+#### Verrouillage post-signature
+- Dès la **double signature** (salarié + manager/RH), l'entretien devient
+  **non modifiable**, indépendamment du statut de la campagne.
+- Appliqué à trois niveaux : **UI** (`isReadOnly`), **service/contexte**
+  (garde dans `updateProfessionalInterview` qui rejette toute modification de
+  contenu d'un entretien verrouillé), et **base de données** (trigger de la
+  migration 012). Helper `isProfessionalInterviewLocked` (`helpers.ts`).
+
+#### Snapshot final immuable
+- Copie JSONB du contenu final **figée côté serveur au moment de la 2ᵉ
+  signature** (`signed_snapshot`, migration 012). Type
+  `ProfessionalInterviewSnapshot`.
+- Le compte-rendu s'appuie sur ce snapshot (helper
+  `getProfessionalInterviewFinalContent`), avec repli sur les champs vivants
+  tant que le snapshot n'existe pas (avant application de la migration).
+
+#### Remise au salarié (traçable séparément de la signature)
+- Champs `delivered_at` / `delivered_by` ; action `deliverProfessionalInterview`
+  et service `markProfessionalInterviewDelivered`. `delivered_by` est stampé
+  serveur (`auth.uid()`). Bouton « Marquer comme remis » (RH/manager),
+  disponible une fois l'entretien signé ; date de remise affichée ensuite.
+
+#### Compte-rendu EPP dédié
+- Nouveau service `professional-interview-export.ts` (impression/PDF via
+  fenêtre navigateur), **totalement distinct** de l'export des évaluations
+  (`excel.ts`). **Aucun rating, aucune 9-box, aucun vocabulaire de
+  performance.** Contient les sections EPP, les signatures (image + nom +
+  date) et la date de remise. Bouton « Imprimer / PDF » côté manager et
+  salarié.
+
+#### Audit minimal
+- `created_by` / `updated_by` stampés côté serveur via triggers (jamais
+  renseignés par le frontend). `*_signed_at` déjà présents.
+
+#### Base de données
+- **Migration `012_epp_proof_and_audit.sql`** : colonnes `signed_snapshot`,
+  `delivered_at`, `delivered_by`, `created_by`, `updated_by` + triggers
+  (audit à l'INSERT, verrouillage + gel du snapshot + audit à l'UPDATE).
+  **Préparée mais non poussée** — application manuelle après validation.
+
+#### Fichiers
+- Nouveaux : `src/services/professional-interview-export.ts`,
+  `supabase/migrations/012_epp_proof_and_audit.sql`.
+- Modifiés : `src/types/index.ts`, `src/lib/database.types.ts`,
+  `src/utils/helpers.ts`, `src/services/supabase-data.ts`,
+  `src/context/ProfessionalInterviewContext.tsx`,
+  `src/components/professional-interviews/ProfessionalInterviewView.tsx`,
+  `src/locales/{fr,en,es}.json`.
+
+---
+
 ## [1.10.0] — 2026-07-01
 
 ### EPP — Correction réglementaire : cadre 4 ans / 8 ans

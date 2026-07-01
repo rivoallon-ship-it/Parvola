@@ -650,5 +650,16 @@
   "professionalInterview.mobility.none": "No mobility",
   "professionalInterview.mobility.internal": "Internal mobility",
   "professionalInterview.mobility.external": "External mobility",
-  "professionalInterview.mobility.geographic": "Geographic mobility"
+  "professionalInterview.mobility.geographic": "Geographic mobility",
+  "professionalInterview.lockedBanner": "Interview signed and locked. The report is frozen and can no longer be edited.",
+  "professionalInterview.lockedError": "This interview is signed and locked: it can no longer be edited.",
+  "toast.professionalInterviewDelivered": "Report delivery recorded",
+  "professionalReport.title": "Professional interview report",
+  "professionalReport.subtitle": "Document handed to the employee — career project, training and development. No performance evaluation.",
+  "professionalReport.print": "Print / PDF",
+  "professionalReport.markDelivered": "Mark as handed to the employee",
+  "professionalReport.deliveredOn": "Handed to the employee on",
+  "professionalReport.deliverAfterSignature": "Delivery can be recorded once the interview is signed.",
+  "professionalReport.heldOn": "Interview held on",
+  "professionalReport.footer": "Professional interview — separate from the annual performance review."
 }

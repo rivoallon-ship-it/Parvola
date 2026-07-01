@@ -640,5 +640,16 @@
   "professionalInterview.mobility.none": "Aucune mobilité souhaitée",
   "professionalInterview.mobility.internal": "Mobilité interne",
   "professionalInterview.mobility.external": "Mobilité externe",
-  "professionalInterview.mobility.geographic": "Mobilité géographique"
+  "professionalInterview.mobility.geographic": "Mobilité géographique",
+  "professionalInterview.lockedBanner": "Entretien signé et verrouillé. Le compte-rendu est figé et ne peut plus être modifié.",
+  "professionalInterview.lockedError": "Cet entretien est signé et verrouillé : il n'est plus modifiable.",
+  "toast.professionalInterviewDelivered": "Remise du compte-rendu enregistrée",
+  "professionalReport.title": "Compte-rendu d'entretien professionnel",
+  "professionalReport.subtitle": "Document remis au salarié — projet professionnel, formation et évolution. Sans évaluation de la performance.",
+  "professionalReport.print": "Imprimer / PDF",
+  "professionalReport.markDelivered": "Marquer comme remis au salarié",
+  "professionalReport.deliveredOn": "Remis au salarié le",
+  "professionalReport.deliverAfterSignature": "La remise pourra être tracée une fois l'entretien signé.",
+  "professionalReport.heldOn": "Entretien tenu le",
+  "professionalReport.footer": "Entretien professionnel — dispositif distinct de l'entretien annuel d'évaluation."
 }

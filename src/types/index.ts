@@ -286,6 +286,26 @@ export interface ProfessionalCampaign {
   closingDeadline?: string;
 }
 
+// Snapshot immuable figé côté serveur au moment de la double signature.
+// Sert de preuve du contenu signé : le compte-rendu s'appuie dessus, jamais
+// sur les champs encore éditables. Voir migration 012.
+export interface ProfessionalInterviewSnapshot {
+  version: number;
+  frozenAt: string;
+  careerReview: string;
+  skillsAcquired: string;
+  evolutionMobility: MobilityWish;
+  evolutionNotes: string;
+  trainingWishes: string;
+  conclusions: string;
+  employeeComment: string;
+  managerComment: string;
+  employeeSignedAt?: string;
+  managerSignedAt?: string;
+  employeeSignatureName?: string;
+  managerSignatureName?: string;
+}
+
 export interface ProfessionalInterview {
   id: string;
   campaignId: string;
@@ -307,6 +327,13 @@ export interface ProfessionalInterview {
   employeeSignatureName?: string;
   managerSignature?: string;
   managerSignatureName?: string;
+  // Preuve & remise (Lot A — nécessite migration 012)
+  signedSnapshot?: ProfessionalInterviewSnapshot;
+  deliveredAt?: string;
+  deliveredBy?: string;
+  // Audit minimal renseigné côté serveur (auth.uid())
+  createdBy?: string;
+  updatedBy?: string;
 }
 
 export interface NewProfessionalCampaignForm {
@@ -454,6 +481,7 @@ export interface ProfessionalInterviewActions {
   updateProfessionalInterview: (id: string, fields: Partial<ProfessionalInterview>) => Promise<void>;
   deleteProfessionalInterview: (id: string) => Promise<void>;
   signProfessionalInterview: (id: string, by: 'employee' | 'manager', signature: string, name: string) => Promise<void>;
+  deliverProfessionalInterview: (id: string) => Promise<void>;
 }
 
 export type ProfessionalInterviewContextType = ProfessionalInterviewState & ProfessionalInterviewActions;

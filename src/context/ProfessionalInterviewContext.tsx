@@ -14,7 +14,13 @@ import {
   updateProfessionalInterviewDb,
   deleteProfessionalInterviewDb,
   signProfessionalInterviewAsEmployee,
+  markProfessionalInterviewDelivered,
 } from '@/services/supabase-data';
+import { isProfessionalInterviewLocked } from '@/utils/helpers';
+
+// Champs que le verrouillage post-signature protège : tout sauf la traçabilité
+// de remise (delivered*), qui doit rester possible après signature.
+const DELIVERY_ONLY_FIELDS: (keyof ProfessionalInterview)[] = ['deliveredAt', 'deliveredBy'];
 
 type Action =
   | { type: 'SET_CAMPAIGNS'; payload: ProfessionalCampaign[] }
@@ -132,13 +138,28 @@ export const ProfessionalInterviewProvider: React.FC<ProfessionalInterviewProvid
   }, [state.professionalInterviews]);
 
   const updateProfessionalInterview = useCallback(async (id: string, fields: Partial<ProfessionalInterview>) => {
+    // Verrouillage post-signature appliqué côté service (défense en profondeur,
+    // en plus du trigger DB de la migration 012 et du blocage UI) : un entretien
+    // signé n'est plus modifiable, hors traçabilité de remise.
+    const current = state.professionalInterviews.find((i) => i.id === id);
+    const touchesProtectedFields = Object.keys(fields).some(
+      (key) => !DELIVERY_ONLY_FIELDS.includes(key as keyof ProfessionalInterview)
+    );
+    if (current && isProfessionalInterviewLocked(current) && touchesProtectedFields) {
+      throw new Error('professionalInterview.lockedError');
+    }
     await updateProfessionalInterviewDb(id, fields);
     dispatch({ type: 'UPDATE_INTERVIEW', payload: { id, changes: fields } });
-  }, []);
+  }, [state.professionalInterviews]);
 
   const deleteProfessionalInterview = useCallback(async (id: string) => {
     await deleteProfessionalInterviewDb(id);
     dispatch({ type: 'REMOVE_INTERVIEW', payload: id });
+  }, []);
+
+  const deliverProfessionalInterview = useCallback(async (id: string) => {
+    const deliveredAt = await markProfessionalInterviewDelivered(id);
+    dispatch({ type: 'UPDATE_INTERVIEW', payload: { id, changes: { deliveredAt } } });
   }, []);
 
   const signProfessionalInterview = useCallback(async (id: string, by: 'employee' | 'manager', signature: string, name: string) => {
@@ -165,6 +186,7 @@ export const ProfessionalInterviewProvider: React.FC<ProfessionalInterviewProvid
     updateProfessionalInterview,
     deleteProfessionalInterview,
     signProfessionalInterview,
+    deliverProfessionalInterview,
   };
 
   return (

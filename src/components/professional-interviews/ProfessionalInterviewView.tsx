@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, Info } from 'lucide-react';
+import { CheckCircle2, Info, Lock, Printer, PackageCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ProfessionalInterview, MobilityWish } from '@/types';
 import { Card, Button, TextArea, CampaignStatusBadge, SignaturePad } from '@/components/common';
 import { BackButton } from '@/components/layout';
 import { useNavigation, useProfessionalInterviews, useUser, useToast } from '@/hooks';
 import { colors } from '@/constants/colors';
+import { isProfessionalInterviewLocked, formatDate } from '@/utils/helpers';
+import { printProfessionalInterviewReport } from '@/services/professional-interview-export';
 
 const MOBILITY_OPTIONS: MobilityWish[] = ['none', 'internal', 'external', 'geographic'];
 
@@ -31,19 +33,23 @@ export const ProfessionalInterviewView: React.FC = () => {
     setCurrentView,
     setViewingProfessionalInterview,
   } = useNavigation();
-  const { professionalInterviews, updateProfessionalInterview, signProfessionalInterview } = useProfessionalInterviews();
+  const { professionalInterviews, updateProfessionalInterview, signProfessionalInterview, deliverProfessionalInterview } = useProfessionalInterviews();
   const { currentUser } = useUser();
   const toast = useToast();
 
   const [form, setForm] = useState<Partial<ProfessionalInterview>>({});
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [delivering, setDelivering] = useState(false);
 
   // Derive from live list so signature updates re-render immediately.
   const interview = professionalInterviews.find((i) => i.id === viewingProfessionalInterview?.id) ?? viewingProfessionalInterview;
   const campaign = viewingProfessionalCampaign;
-  const isReadOnly = campaign?.status === 'closed';
   const isEmployee = currentUser.role === 'employee';
+  // Verrouillage post-signature : une fois doublement signé, l'entretien est
+  // en lecture seule même si la campagne est encore active (règle de preuve).
+  const locked = interview ? isProfessionalInterviewLocked(interview) : false;
+  const isReadOnly = campaign?.status === 'closed' || locked;
 
   useEffect(() => {
     if (interview) {
@@ -94,6 +100,23 @@ export const ProfessionalInterviewView: React.FC = () => {
   const handleSign = async (by: 'employee' | 'manager', signature: string, name: string) => {
     await signProfessionalInterview(interview.id, by, signature, name);
     toast.success(t('toast.interviewSigned'));
+  };
+
+  const handlePrintReport = () => {
+    if (!interview || !campaign || !selectedEmployee) return;
+    printProfessionalInterviewReport({ interview, employee: selectedEmployee, campaign });
+  };
+
+  const handleDeliver = async () => {
+    setDelivering(true);
+    try {
+      await deliverProfessionalInterview(interview.id);
+      toast.success(t('toast.professionalInterviewDelivered'));
+    } catch {
+      toast.error(t('toast.genericError'));
+    } finally {
+      setDelivering(false);
+    }
   };
 
   const handleBack = () => {
@@ -153,11 +176,16 @@ export const ProfessionalInterviewView: React.FC = () => {
         )}
       </Card>
 
-      {isReadOnly && (
+      {locked ? (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800">
+          <Lock size={18} className="flex-shrink-0" />
+          <span className="text-sm font-medium">{t('professionalInterview.lockedBanner')}</span>
+        </div>
+      ) : campaign.status === 'closed' ? (
         <div className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-gray-100 border-gray-300 text-gray-700">
           <span className="text-sm font-medium">{t('campaign.closedBanner')}</span>
         </div>
-      )}
+      ) : null}
 
       {/* Section 1 : Bilan du parcours */}
       <Card>
@@ -302,6 +330,33 @@ export const ProfessionalInterviewView: React.FC = () => {
               <p className="text-xs text-gray-400">{t('professionalInterview.notSigned')}</p>
             )}
           </div>
+        </div>
+      </Card>
+
+      {/* Compte-rendu & remise au salarié */}
+      <Card>
+        <SectionTitle>{t('professionalReport.title')}</SectionTitle>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="secondary" onClick={handlePrintReport}>
+            <Printer size={16} className="mr-1" />
+            {t('professionalReport.print')}
+          </Button>
+
+          {!isEmployee && (
+            interview.deliveredAt ? (
+              <span className="inline-flex items-center gap-2 text-sm text-emerald-700">
+                <PackageCheck size={16} />
+                {t('professionalReport.deliveredOn')} {formatDate(interview.deliveredAt)}
+              </span>
+            ) : locked ? (
+              <Button variant="primary" onClick={handleDeliver} disabled={delivering}>
+                <PackageCheck size={16} className="mr-1" />
+                {delivering ? t('common.loading') : t('professionalReport.markDelivered')}
+              </Button>
+            ) : (
+              <span className="text-sm text-gray-400">{t('professionalReport.deliverAfterSignature')}</span>
+            )
+          )}
         </div>
       </Card>
 

@@ -329,10 +329,11 @@ ultérieur (Lot 4, historique sur fiche employé).
 | **1** | Fondations (DB, types, services, contexte) | **Livré (1.6.0)** |
 | **2** | CRUD campagnes pro (création, liste, statuts) | **Livré (1.8.0)** |
 | **3** | Saisie entretien (formulaire multi-sections) | **Livré (1.8.0)** |
-| 4 | Historique sur fiche employé | À venir |
-| 5 | Agent IA de préparation d'entretien | À venir |
+| 4 | Historique sur fiche employé | À venir (Lot B) |
+| 5 | Agent IA de préparation d'entretien | À venir (Lot C) |
 | **6** | Navigation + i18n + permissions transverses | **Livré (1.8.0)** |
 | **7** | Signatures manuscrites (pro + évaluations) | **Livré (1.9.0)** |
+| **A** | Preuve, verrouillage post-signature, snapshot, remise, audit, compte-rendu PDF | **Livré (1.11.0)** |
 
 ### 8bis.6 Signatures manuscrites (1.9.0)
 
@@ -349,6 +350,30 @@ ultérieur (Lot 4, historique sur fiche employé).
 - Moment : entretien pro → à l'état `completed` (signatures déjà prévues) ;
   évaluation → dès l'état `submitted` (le manager signe avant le verrouillage
   `validated`, le salarié peut signer même après via RPC).
+
+### 8bis.7 Preuve, verrouillage & remise — Lot A (1.11.0)
+
+L'EPP devient une **preuve opposable**. Choix structurants :
+
+- **Verrouillage post-signature à 3 niveaux** (défense en profondeur) : dès la
+  double signature, le contenu est figé — indépendamment du statut de la
+  campagne. Imposé côté **UI** (`isReadOnly`), côté **service/contexte**
+  (garde dans `updateProfessionalInterview`) et côté **base** (trigger de la
+  migration 012). Un entretien signé ne redevient jamais éditable.
+- **Snapshot serveur** : le contenu final est copié dans `signed_snapshot`
+  (JSONB) **par un trigger DB au moment de la 2ᵉ signature**, pas côté client
+  (non falsifiable). Le compte-rendu lit ce snapshot en priorité.
+- **Remise distincte de la signature** : `delivered_at` / `delivered_by`
+  (stampé serveur), pour couvrir le cas « signé puis remis ».
+- **Audit** : `created_by` / `updated_by` renseignés par trigger via
+  `auth.uid()` — le frontend n'est jamais la source de vérité.
+- **Compte-rendu séparé** : service `professional-interview-export.ts`
+  volontairement disjoint de l'export des évaluations — aucun rating, aucune
+  9-box, aucun vocabulaire de performance.
+- **Compatibilité pré-migration** : tant que la migration 012 n'est pas
+  appliquée, le verrouillage reste actif (dérivé des signatures existantes) et
+  le compte-rendu se rabat sur les champs vivants ; snapshot, remise et audit
+  s'activent une fois la migration poussée.
 
 ---
 
@@ -481,6 +506,7 @@ companies
 | 009 | `009_fix_professional_rls_roles.sql` | Correctifs RLS des entretiens pro (rôles admin/directeur) |
 | 010 | `010_interview_signatures.sql` | Signatures (colonnes `*_signature*`) + RPC `sign_*_as_employee` |
 | 011 | `011_epp_framework_4_8_years.sql` | **Préparée, non poussée.** Correction réglementaire EPP : métadonnées (`COMMENT ON`) documentant le cadre 4 ans / 8 ans (remplace biennal / 6 ans) |
+| 012 | `012_epp_proof_and_audit.sql` | **Préparée, non poussée.** EPP preuve (Lot A) : colonnes `signed_snapshot`, `delivered_at/by`, `created_by`, `updated_by` + triggers (audit, gel du snapshot à la double signature, verrouillage immuable) |
 
 ### 14.3 Edge Functions
 

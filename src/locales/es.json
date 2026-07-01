@@ -649,5 +649,16 @@
   "professionalInterview.mobility.none": "Sin movilidad",
   "professionalInterview.mobility.internal": "Movilidad interna",
   "professionalInterview.mobility.external": "Movilidad externa",
-  "professionalInterview.mobility.geographic": "Movilidad geográfica"
+  "professionalInterview.mobility.geographic": "Movilidad geográfica",
+  "professionalInterview.lockedBanner": "Entrevista firmada y bloqueada. El acta queda fijada y ya no puede modificarse.",
+  "professionalInterview.lockedError": "Esta entrevista está firmada y bloqueada: ya no puede modificarse.",
+  "toast.professionalInterviewDelivered": "Entrega del acta registrada",
+  "professionalReport.title": "Acta de entrevista profesional",
+  "professionalReport.subtitle": "Documento entregado al empleado — proyecto profesional, formación y desarrollo. Sin evaluación del desempeño.",
+  "professionalReport.print": "Imprimir / PDF",
+  "professionalReport.markDelivered": "Marcar como entregado al empleado",
+  "professionalReport.deliveredOn": "Entregado al empleado el",
+  "professionalReport.deliverAfterSignature": "La entrega podrá registrarse una vez firmada la entrevista.",
+  "professionalReport.heldOn": "Entrevista realizada el",
+  "professionalReport.footer": "Entrevista profesional — dispositivo distinto de la evaluación anual del desempeño."
 }

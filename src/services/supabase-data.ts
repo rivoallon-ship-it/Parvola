@@ -560,6 +560,12 @@ const mapProfessionalInterview = (row: DbProfessionalInterview): ProfessionalInt
   employeeSignatureName: row.employee_signature_name || undefined,
   managerSignature: row.manager_signature || undefined,
   managerSignatureName: row.manager_signature_name || undefined,
+  // Lot A — présents une fois la migration 012 appliquée, sinon undefined
+  signedSnapshot: (row.signed_snapshot as ProfessionalInterview['signedSnapshot']) || undefined,
+  deliveredAt: row.delivered_at || undefined,
+  deliveredBy: row.delivered_by || undefined,
+  createdBy: row.created_by || undefined,
+  updatedBy: row.updated_by || undefined,
 });
 
 export async function fetchProfessionalInterviews(): Promise<ProfessionalInterview[]> {
@@ -603,6 +609,7 @@ export async function updateProfessionalInterviewDb(
     managerSignedAt: 'manager_signed_at',
     managerSignature: 'manager_signature',
     managerSignatureName: 'manager_signature_name',
+    deliveredAt: 'delivered_at',
   };
   const update: Record<string, unknown> = {};
   for (const [key, column] of Object.entries(columnMap)) {
@@ -619,6 +626,19 @@ export async function updateProfessionalInterviewDb(
 
 export async function deleteProfessionalInterviewDb(id: string): Promise<void> {
   throwIfMutationError(await supabase.from('professional_interviews').delete().eq('id', id));
+}
+
+/**
+ * Trace la remise du compte-rendu au salarié (distincte de la signature).
+ * `delivered_by` est renseigné côté serveur (auth.uid()) par le trigger de la
+ * migration 012 ; on n'écrit ici que l'horodatage de remise.
+ */
+export async function markProfessionalInterviewDelivered(id: string): Promise<string> {
+  const deliveredAt = new Date().toISOString();
+  throwIfMutationError(
+    await supabase.from('professional_interviews').update({ delivered_at: deliveredAt }).eq('id', id)
+  );
+  return deliveredAt;
 }
 
 /** Employee self-signs their own professional interview via SECURITY DEFINER RPC. */

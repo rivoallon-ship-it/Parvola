@@ -1,4 +1,10 @@
-import type { ObjectiveStatus, CampaignStatus, EvaluationStatus } from '@/types';
+import type {
+  ObjectiveStatus,
+  CampaignStatus,
+  EvaluationStatus,
+  ProfessionalInterview,
+  ProfessionalInterviewSnapshot,
+} from '@/types';
 import { PROFILE_EMOJIS, PROFESSIONAL_INTERVIEW_CONFIG } from '@/constants/config';
 import i18n from '@/i18n';
 
@@ -183,4 +189,49 @@ export const getNextProfessionalStateOfPlayDueDate = (
 ): string | null => {
   if (!hireDate) return null;
   return addYears(hireDate, PROFESSIONAL_INTERVIEW_CONFIG.stateOfPlayYears);
+};
+
+// ---------- Entretien professionnel (EPP) — preuve & verrouillage ----------
+
+/**
+ * Un entretien est signé dès que le salarié ET le manager/RH ont signé.
+ */
+export const isProfessionalInterviewSigned = (interview: ProfessionalInterview): boolean =>
+  !!interview.employeeSignedAt && !!interview.managerSignedAt;
+
+/**
+ * Verrouillage post-signature : une fois doublement signé, l'entretien devient
+ * non modifiable — indépendamment du statut (encore actif) de la campagne.
+ * C'est la règle de preuve : le contenu signé ne doit plus changer.
+ * (Le backend l'impose aussi via un trigger — voir migration 012.)
+ */
+export const isProfessionalInterviewLocked = (interview: ProfessionalInterview): boolean =>
+  isProfessionalInterviewSigned(interview);
+
+/**
+ * Contenu de référence pour le compte-rendu : le snapshot figé au moment de la
+ * double signature s'il existe, sinon les champs vivants (entretien non encore
+ * signé, ou snapshot pas encore disponible côté base). Garantit qu'un
+ * compte-rendu émis après signature reflète exactement ce qui a été signé.
+ */
+export const getProfessionalInterviewFinalContent = (
+  interview: ProfessionalInterview
+): ProfessionalInterviewSnapshot => {
+  if (interview.signedSnapshot) return interview.signedSnapshot;
+  return {
+    version: 0,
+    frozenAt: '',
+    careerReview: interview.careerReview,
+    skillsAcquired: interview.skillsAcquired,
+    evolutionMobility: interview.evolutionMobility,
+    evolutionNotes: interview.evolutionNotes,
+    trainingWishes: interview.trainingWishes,
+    conclusions: interview.conclusions,
+    employeeComment: interview.employeeComment,
+    managerComment: interview.managerComment,
+    employeeSignedAt: interview.employeeSignedAt,
+    managerSignedAt: interview.managerSignedAt,
+    employeeSignatureName: interview.employeeSignatureName,
+    managerSignatureName: interview.managerSignatureName,
+  };
 };

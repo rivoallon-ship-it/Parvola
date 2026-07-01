@@ -168,6 +168,12 @@ export interface DbProfessionalInterview {
   employee_signature_name: string | null;
   manager_signature: string | null;
   manager_signature_name: string | null;
+  // Lot A — preuve, remise & audit (migration 012 ; nullable en attendant)
+  signed_snapshot?: Record<string, unknown> | null;
+  delivered_at?: string | null;
+  delivered_by?: string | null;
+  created_by?: string | null;
+  updated_by?: string | null;
   created_at: string;
   updated_at: string;
 }
