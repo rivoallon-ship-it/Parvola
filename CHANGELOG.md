@@ -4,6 +4,47 @@ Toutes les modifications notables du projet Parvola (ex-Talent Review) sont docu
 
 ---
 
+## [1.10.0] — 2026-07-01
+
+### EPP — Correction réglementaire : cadre 4 ans / 8 ans
+
+Mise en conformité du domaine **entretien professionnel (EPP)** avec le
+cadre légal applicable **depuis le 31 décembre 2025**, qui remplace l'ancien
+rythme **biennal avec bilan à 6 ans** :
+
+- **premier entretien dans la première année** suivant l'embauche ;
+- **périodicité de 4 ans** entre deux entretiens professionnels ;
+- **état des lieux récapitulatif tous les 8 ans** ;
+- entretien à **proposer au retour d'absences longues** (congés
+  maternité/parental/proche aidant, sabbatique, arrêt maladie prolongé,
+  mandat…).
+
+#### Code
+- Nouvelle source de vérité unique `PROFESSIONAL_INTERVIEW_CONFIG`
+  (`src/constants/config.ts`) : `firstInterviewWithinYears: 1`,
+  `periodicityYears: 4`, `stateOfPlayYears: 8`.
+- Helpers `getNextProfessionalInterviewDueDate` et
+  `getNextProfessionalStateOfPlayDueDate` (`src/utils/helpers.ts`) pour
+  calculer les échéances théoriques (consommés par le futur Lot historique).
+- Commentaire de cadrage sur les types EPP (`src/types/index.ts`).
+
+#### Base de données
+- **Migration `011_epp_framework_4_8_years.sql`** (documentation seule :
+  `COMMENT ON` tables/colonnes/index, aucune modification de structure ni de
+  RLS). **Préparée mais non poussée** — application manuelle après validation
+  explicite.
+- Correction des commentaires obsolètes (« biennial » / « 6-year ») dans
+  `008_professional_interviews.sql`, avec renvoi vers la migration 011.
+
+#### Documentation
+- `DECISIONS.md` (§8bis), `docs/ARCHITECTURE.md` : plus aucune mention de
+  biennal / 6 ans pour l'EPP ; tableau des migrations complété (009 → 011).
+
+Aucune fusion entre EPP et évaluations de performance : le domaine reste
+séparé (types, tables, contexte, écrans, workflow).
+
+---
+
 ## [1.9.0] — 2026-06-15
 
 ### Signatures manuscrites — entretiens pro & évaluations annuelles
@@ -139,6 +180,10 @@ Les 3 fonctions ont été **redéployées** sur le projet `nbtvwgsdnmorciniowxi`
 ## [1.6.0] — 2026-04-26
 
 ### Entretien professionnel — Lot 1 : fondations (`2593c74`)
+
+> ℹ️ **Note (2026-07-01)** : la périodicité indiquée dans cette entrée
+> historique (biennal / bilan 6 ans) est **obsolète**. Cadre corrigé en
+> 1.10.0 : premier entretien à 1 an, périodicité 4 ans, état des lieux 8 ans.
 
 Introduction du domaine **entretien professionnel** (dispositif RH français
 biennal, distinct de l'entretien annuel d'évaluation). Architecture choisie :

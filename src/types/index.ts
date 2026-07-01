@@ -271,7 +271,11 @@ export interface AIReviewResult {
   summary: { totalCorrections: number; totalSuggestions: number; criticalAlerts: number };
 }
 
-// ---------- Entretien Professionnel ----------
+// ---------- Entretien Professionnel (EPP) ----------
+// Dispositif RH français distinct de l'entretien annuel d'évaluation.
+// Cadre applicable depuis le 31/12/2025 (voir PROFESSIONAL_INTERVIEW_CONFIG) :
+// premier entretien dans la 1re année, périodicité de 4 ans, état des lieux
+// récapitulatif à 8 ans. Pas de notation, pas de 9-box.
 export interface ProfessionalCampaign {
   id: string;
   year: number;

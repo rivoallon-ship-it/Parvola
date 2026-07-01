@@ -1,5 +1,5 @@
 import type { ObjectiveStatus, CampaignStatus, EvaluationStatus } from '@/types';
-import { PROFILE_EMOJIS } from '@/constants/config';
+import { PROFILE_EMOJIS, PROFESSIONAL_INTERVIEW_CONFIG } from '@/constants/config';
 import i18n from '@/i18n';
 
 // ============================================
@@ -140,4 +140,47 @@ export const canValidateEvaluation = (
   evaluationStatus?: EvaluationStatus
 ): boolean => {
   return campaignStatus === 'active' && evaluationStatus === 'submitted';
+};
+
+// ---------- Entretien professionnel (EPP) — échéances ----------
+
+/**
+ * Ajoute un nombre d'années à une date ISO et renvoie la date résultante
+ * au format ISO (YYYY-MM-DD).
+ */
+const addYears = (dateString: string, years: number): string => {
+  const date = new Date(dateString);
+  date.setFullYear(date.getFullYear() + years);
+  return date.toISOString().split('T')[0];
+};
+
+/**
+ * Échéance théorique du prochain entretien professionnel.
+ * Cadre depuis le 31/12/2025 : périodicité de 4 ans (voir
+ * PROFESSIONAL_INTERVIEW_CONFIG). Prend la date du dernier entretien mené
+ * (`conductedAt`) ; à défaut, calcule à partir de la date d'entrée du
+ * salarié en appliquant le délai de premier entretien (1 an).
+ */
+export const getNextProfessionalInterviewDueDate = (
+  lastConductedAt?: string,
+  hireDate?: string
+): string | null => {
+  if (lastConductedAt) {
+    return addYears(lastConductedAt, PROFESSIONAL_INTERVIEW_CONFIG.periodicityYears);
+  }
+  if (hireDate) {
+    return addYears(hireDate, PROFESSIONAL_INTERVIEW_CONFIG.firstInterviewWithinYears);
+  }
+  return null;
+};
+
+/**
+ * Échéance théorique du prochain état des lieux récapitulatif (8 ans).
+ * Calculée à partir de la date d'entrée du salarié.
+ */
+export const getNextProfessionalStateOfPlayDueDate = (
+  hireDate?: string
+): string | null => {
+  if (!hireDate) return null;
+  return addYears(hireDate, PROFESSIONAL_INTERVIEW_CONFIG.stateOfPlayYears);
 };

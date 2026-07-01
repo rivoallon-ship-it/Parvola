@@ -45,6 +45,28 @@ export const CAMPAIGN_CONFIG = {
   defaultStatus: 'draft' as const,
 } as const;
 
+// ============================================
+// Entretien professionnel (EPP) — cadre légal
+// ============================================
+// Source de vérité unique de la périodicité de l'entretien professionnel.
+// Cadre applicable depuis le 31 décembre 2025 (remplace l'ancien rythme
+// biennal / bilan à 6 ans) :
+//   - premier entretien dans la première année suivant l'embauche,
+//   - entretien professionnel tous les 4 ans,
+//   - état des lieux récapitulatif du parcours tous les 8 ans.
+// La périodicité est également réinitialisée au retour de certaines
+// absences longues (congé maternité, parental, proche aidant, sabbatique,
+// arrêt maladie prolongé, mandat, etc.) : un entretien doit être proposé
+// au retour du salarié.
+export const PROFESSIONAL_INTERVIEW_CONFIG = {
+  // Délai maximal (en années) entre l'embauche et le premier entretien.
+  firstInterviewWithinYears: 1,
+  // Périodicité de l'entretien professionnel, en années.
+  periodicityYears: 4,
+  // Périodicité de l'état des lieux récapitulatif, en années.
+  stateOfPlayYears: 8,
+} as const;
+
 // Configuration des objectifs
 export const OBJECTIVE_CONFIG = {
   defaultDeadlineDays: 90,

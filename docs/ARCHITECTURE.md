@@ -41,7 +41,7 @@ Parvola/
 │   │   ├── ai-proxy/       # Proxy sécurisé vers Anthropic
 │   │   ├── invite-user/    # Invitation d'utilisateurs (admin/RH)
 │   │   └── signup-company/ # Création de compte entreprise
-│   ├── migrations/         # 001 → 007
+│   ├── migrations/         # 001 → 011
 │   └── seed.sql            # Données de démo (Sushi Neko)
 ├── vercel.json             # Config Vercel (headers, rewrites)
 ├── vite.config.ts
@@ -119,7 +119,10 @@ Composant → Hook / Service (supabase-data.ts)
 | 005 | `005_position_role_employee_email.sql` | Champ `role` sur positions, champ `email` sur employees |
 | 006 | `006_company_ai_prompts.sql` | Colonne `ai_prompts JSONB` sur companies |
 | 007 | `007_security_hardening.sql` | Policies INSERT/DELETE sur companies |
-| 008 | `008_professional_interviews.sql` | Domaine entretien professionnel (tables `professional_campaigns`, `professional_interviews`, enums, RLS multi-tenant) |
+| 008 | `008_professional_interviews.sql` | Domaine entretien professionnel EPP (tables `professional_campaigns`, `professional_interviews`, enums, RLS multi-tenant) |
+| 009 | `009_fix_professional_rls_roles.sql` | Correctifs RLS des entretiens pro (rôles admin/directeur) |
+| 010 | `010_interview_signatures.sql` | Signatures (colonnes `*_signature*`) + RPC `sign_*_as_employee` |
+| 011 | `011_epp_framework_4_8_years.sql` | Correction réglementaire EPP : métadonnées `COMMENT ON` du cadre 4 ans / 8 ans (préparée, non poussée) |
 
 ---
 

@@ -1,9 +1,16 @@
 -- =============================================
 -- Talent Review — Migration 008: Professional Interviews
 -- =============================================
--- Adds the "entretien professionnel" domain (French legal
--- biennial career interview), distinct from the existing
--- performance evaluation workflow (semesters/evaluations).
+-- Adds the "entretien professionnel" (EPP) domain, a French legal
+-- career interview distinct from the existing performance evaluation
+-- workflow (semesters/evaluations).
+--
+-- NOTE (regulatory correction): the periodicity described in earlier
+-- versions of this file (biennial + 6-year recap) is OBSOLETE since
+-- 2025-12-31. The current framework is: first interview within 1 year,
+-- then every 4 years, with an 8-year "état des lieux" recap. The corrected
+-- framework is recorded as metadata in migration 011. The schema below is
+-- periodicity-agnostic and remains valid.
 -- =============================================
 
 -- =============================================
@@ -75,7 +82,8 @@ CREATE TABLE professional_interviews (
 CREATE INDEX idx_professional_interviews_company ON professional_interviews(company_id);
 CREATE INDEX idx_professional_interviews_campaign ON professional_interviews(campaign_id);
 CREATE INDEX idx_professional_interviews_employee ON professional_interviews(employee_id);
--- Composite index for the 6-year retrospective lookup (history per employee, chronological)
+-- Composite index for the per-employee chronological history (used by the
+-- 8-year "état des lieux" recap — see migration 011)
 CREATE INDEX idx_professional_interviews_employee_conducted ON professional_interviews(employee_id, conducted_at);
 
 ALTER TABLE professional_interviews ENABLE ROW LEVEL SECURITY;

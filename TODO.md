@@ -9,6 +9,12 @@ roadmap (qui sont elles dans `DECISIONS.md`).
 
 ### [P1] Rotation du `SUPABASE_ACCESS_TOKEN` personnel
 
+> ⚠️ **BLOQUANT MISE EN PRODUCTION** : la rotation de ce token est
+> **obligatoire avant la mise en production finale**. Ne pas livrer tant
+> que le token exposé n'est pas révoqué et remplacé (voir Lot final —
+> Sécurité). Ce point est volontairement différé pendant le chantier EPP,
+> mais reste ouvert.
+
 **Contexte** : lors du déploiement de la migration 008 (Lot 1 entretiens
 professionnels, 2026-05-13), un personal access token Supabase a été
 fourni en clair dans une conversation Claude Code (préfixe `sbp_`,

@@ -102,7 +102,7 @@ supabase/
 | `OrganizationContext` | Établissements et équipes |
 | `SemesterContext` | Campagnes (entretien annuel), évaluations, objectifs, workflow |
 | `TemplateContext` | Postes et templates d'objectifs |
-| `ProfessionalInterviewContext` | Campagnes biennales d'entretien professionnel et entretiens individuels (domaine séparé) |
+| `ProfessionalInterviewContext` | Campagnes d'entretien professionnel (EPP, périodicité 4 ans) et entretiens individuels (domaine séparé) |
 
 Le composant `AppProvider` combine tous les contextes. Un hook `useApp()` fournit une API de compatibilité.
 
@@ -258,10 +258,24 @@ Non démarré → En cours → Soumis → Validé
 
 ## 8bis. Entretien professionnel (domaine séparé)
 
-L'entretien professionnel est un dispositif RH français **distinct** de
-l'entretien annuel d'évaluation : périodicité biennale, pas de notation,
-centré sur le projet pro / la formation / l'évolution, avec un bilan
-récapitulatif obligatoire à 6 ans.
+L'entretien professionnel (EPP) est un dispositif RH français **distinct**
+de l'entretien annuel d'évaluation : pas de notation, centré sur le projet
+pro / la formation / l'évolution.
+
+**Cadre légal applicable (depuis le 31/12/2025)** — remplace l'ancien rythme
+biennal / bilan à 6 ans :
+
+- **premier entretien dans la première année** suivant l'embauche ;
+- **périodicité de 4 ans** entre deux entretiens professionnels ;
+- **état des lieux récapitulatif tous les 8 ans** (parcours du salarié) ;
+- un entretien doit être **proposé au retour de certaines absences longues**
+  (congé maternité, parental, proche aidant, sabbatique, arrêt maladie
+  prolongé, mandat syndical…).
+
+Ce cadre est encodé une seule fois côté code dans
+`PROFESSIONAL_INTERVIEW_CONFIG` (`src/constants/config.ts`) et exposé par les
+helpers `getNextProfessionalInterviewDueDate` /
+`getNextProfessionalStateOfPlayDueDate` (`src/utils/helpers.ts`).
 
 ### 8bis.1 Choix d'architecture
 
@@ -300,12 +314,13 @@ partagés) et non côté domaine.
 | `employeeComment`, `managerComment` | TEXT | Commentaires paritaires |
 | `employeeSignedAt`, `managerSignedAt` | TIMESTAMPTZ | Signatures logiques (preuve de tenue) |
 
-### 8bis.4 Préparation du bilan 6 ans
+### 8bis.4 Préparation de l'état des lieux 8 ans
 
 L'index composite `(employee_id, conducted_at)` sur
-`professional_interviews` permettra une lecture rétrospective rapide des
-3 entretiens d'un même salarié sur 6 ans. Le bilan lui-même est différé
-à un lot ultérieur.
+`professional_interviews` permet une lecture rétrospective rapide de
+l'historique d'un même salarié pour préparer l'**état des lieux
+récapitulatif à 8 ans**. L'état des lieux lui-même est différé à un lot
+ultérieur (Lot 4, historique sur fiche employé).
 
 ### 8bis.5 Roadmap
 
@@ -462,7 +477,10 @@ companies
 | 005 | `005_position_role_employee_email.sql` | Colonne `role` sur positions, colonne `email` sur employees |
 | 006 | `006_company_ai_prompts.sql` | Colonne `ai_prompts JSONB` sur companies |
 | 007 | `007_security_hardening.sql` | Policies INSERT/DELETE sur companies (verrou Edge Function) |
-| 008 | `008_professional_interviews.sql` | Domaine entretien professionnel : tables `professional_campaigns` et `professional_interviews`, enums dédiés, RLS multi-tenant scopée par rôle, index `(employee_id, conducted_at)` pour bilan 6 ans |
+| 008 | `008_professional_interviews.sql` | Domaine entretien professionnel : tables `professional_campaigns` et `professional_interviews`, enums dédiés, RLS multi-tenant scopée par rôle, index `(employee_id, conducted_at)` pour l'historique (état des lieux 8 ans) |
+| 009 | `009_fix_professional_rls_roles.sql` | Correctifs RLS des entretiens pro (rôles admin/directeur) |
+| 010 | `010_interview_signatures.sql` | Signatures (colonnes `*_signature*`) + RPC `sign_*_as_employee` |
+| 011 | `011_epp_framework_4_8_years.sql` | **Préparée, non poussée.** Correction réglementaire EPP : métadonnées (`COMMENT ON`) documentant le cadre 4 ans / 8 ans (remplace biennal / 6 ans) |
 
 ### 14.3 Edge Functions
 
