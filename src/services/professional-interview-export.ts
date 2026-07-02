@@ -32,9 +32,13 @@ const formatDateTime = (iso?: string): string => {
   return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
 };
 
-/** N'affiche que les data-URL d'image, sinon rien (prudence anti-injection). */
+// Seules les data-URL PNG/JPEG base64 strictes sont acceptées : le charset
+// [A-Za-z0-9+/=] exclut guillemets et chevrons, donc aucune sortie
+// d'attribut possible même avec une valeur forgée en base.
+const SIGNATURE_DATA_URL = /^data:image\/(png|jpe?g);base64,[A-Za-z0-9+/=]+$/;
+
 const safeSignatureImg = (dataUrl?: string): string => {
-  if (!dataUrl || !dataUrl.startsWith('data:image/')) return '';
+  if (!dataUrl || !SIGNATURE_DATA_URL.test(dataUrl)) return '';
   return `<img class="signature-img" src="${dataUrl}" alt="" />`;
 };
 

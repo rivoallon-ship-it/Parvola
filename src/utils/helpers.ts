@@ -221,6 +221,8 @@ export const getProfessionalInterviewFinalContent = (
   return {
     version: 0,
     frozenAt: '',
+    employeeId: interview.employeeId,
+    conductedAt: interview.conductedAt,
     careerReview: interview.careerReview,
     skillsAcquired: interview.skillsAcquired,
     evolutionMobility: interview.evolutionMobility,

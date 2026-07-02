@@ -4,6 +4,48 @@ Toutes les modifications notables du projet Parvola (ex-Talent Review) sont docu
 
 ---
 
+## [1.11.1] — 2026-07-02
+
+### EPP — Lot A amendé suite à l'audit (preuve renforcée)
+
+Corrections issues de l'audit du Lot A. La migration 012 est réécrite et
+reste **préparée, non poussée**.
+
+#### Migration 012 (réécrite)
+- **P1-1 — Base du verrou** : le trigger considère un entretien verrouillé
+  dès que `employee_signed_at` ET `manager_signed_at` sont présents (et non
+  plus selon l'existence du snapshot). **Backfill** inclus : les EPP déjà
+  doublement signés avant la migration reçoivent leur `signed_snapshot`
+  (flag `backfilled: true`, `frozenAt` = date de la 2ᵉ signature).
+- **P1-2 — Colonnes non forgeables** : `signed_snapshot`, `created_by`,
+  `delivered_by` (et `created_at`) sont neutralisés en tête de trigger —
+  toute valeur fournie par le client est écartée, à l'INSERT comme à
+  l'UPDATE. Seuls les triggers écrivent ces colonnes.
+- **P2 — Snapshot enrichi** : ajoute `employeeId` et `conductedAt` (builder
+  SQL unique `build_professional_interview_snapshot`, partagé entre trigger
+  et backfill).
+- **P2 — Remise conditionnée et one-shot** : `delivered_at` ne peut être
+  posé qu'après double signature, et ne peut plus être modifié ni effacé.
+- **P2 — RPC salarié** : `sign_professional_interview_as_employee` refuse
+  désormais de ré-écraser une signature existante
+  (`employee_signed_at IS NULL`).
+
+#### Frontend
+- **P1-4 — Feature flag remise** : nouvelle option
+  `deliveryTrackingEnabled: false` dans `PROFESSIONAL_INTERVIEW_CONFIG` —
+  l'action « Marquer comme remis » est masquée tant que la migration 012
+  n'est pas appliquée (elle échouait systématiquement, colonnes absentes).
+  À passer à `true` juste après le push de la migration (voir TODO.md).
+- **P2 — Erreurs de verrouillage** : `handleSave`/`handleComplete` catchent
+  et affichent un toast traduit (`professionalInterview.lockedError`) au
+  lieu d'une rejection silencieuse.
+- **P2 — Export durci** : les images de signature ne sont injectées que si
+  elles matchent strictement `data:image/(png|jpe?g);base64,[A-Za-z0-9+/=]+`.
+- Type `ProfessionalInterviewSnapshot` étendu (`employeeId`, `conductedAt`,
+  `backfilled`).
+
+---
+
 ## [1.11.0] — 2026-07-01
 
 ### EPP — Lot A : preuve, verrouillage & remise

@@ -360,20 +360,37 @@ L'EPP devient une **preuve opposable**. Choix structurants :
   campagne. Imposé côté **UI** (`isReadOnly`), côté **service/contexte**
   (garde dans `updateProfessionalInterview`) et côté **base** (trigger de la
   migration 012). Un entretien signé ne redevient jamais éditable.
-- **Snapshot serveur** : le contenu final est copié dans `signed_snapshot`
-  (JSONB) **par un trigger DB au moment de la 2ᵉ signature**, pas côté client
-  (non falsifiable). Le compte-rendu lit ce snapshot en priorité.
+  Le verrou DB est **dérivé des timestamps de signature** (pas de l'existence
+  du snapshot) : les entretiens signés avant la migration sont verrouillés
+  aussi, et leur snapshot est **backfillé** (`backfilled: true`).
+- **Snapshot serveur** : le contenu final (sections EPP + `employeeId` +
+  `conductedAt` + noms/dates de signature) est copié dans `signed_snapshot`
+  (JSONB) **par un trigger DB au moment de la 2ᵉ signature**, via un builder
+  SQL unique. Le compte-rendu lit ce snapshot en priorité.
+- **Colonnes non forgeables** : `signed_snapshot`, `created_by`,
+  `delivered_by`, `created_at` sont neutralisés en tête de trigger — toute
+  valeur fournie par le client (y compris via l'API PostgREST directe) est
+  écartée ; seuls les triggers écrivent ces colonnes.
 - **Remise distincte de la signature** : `delivered_at` / `delivered_by`
-  (stampé serveur), pour couvrir le cas « signé puis remis ».
+  (stampé serveur), pour couvrir le cas « signé puis remis ». La remise
+  n'est acceptée **qu'après double signature** et est **one-shot** (jamais
+  modifiable ni effaçable ensuite).
 - **Audit** : `created_by` / `updated_by` renseignés par trigger via
   `auth.uid()` — le frontend n'est jamais la source de vérité.
+- **Signature salarié non ré-écrasable** : la RPC
+  `sign_professional_interview_as_employee` refuse de signer si
+  `employee_signed_at` existe déjà.
 - **Compte-rendu séparé** : service `professional-interview-export.ts`
   volontairement disjoint de l'export des évaluations — aucun rating, aucune
-  9-box, aucun vocabulaire de performance.
+  9-box, aucun vocabulaire de performance. Les images de signature n'y sont
+  injectées que si elles matchent strictement une data-URL PNG/JPEG base64.
 - **Compatibilité pré-migration** : tant que la migration 012 n'est pas
-  appliquée, le verrouillage reste actif (dérivé des signatures existantes) et
-  le compte-rendu se rabat sur les champs vivants ; snapshot, remise et audit
-  s'activent une fois la migration poussée.
+  appliquée, le verrouillage applicatif reste actif (dérivé des signatures)
+  et le compte-rendu se rabat sur les champs vivants. L'action de **remise
+  est masquée** derrière `PROFESSIONAL_INTERVIEW_CONFIG.deliveryTrackingEnabled`
+  (à passer à `true` juste après le push de la migration — voir TODO.md).
+  ⚠️ Jusqu'à l'application de 012, le verrou n'est **pas opposable** : un
+  appel API direct peut encore modifier un entretien signé.
 
 ---
 
@@ -506,7 +523,7 @@ companies
 | 009 | `009_fix_professional_rls_roles.sql` | Correctifs RLS des entretiens pro (rôles admin/directeur) |
 | 010 | `010_interview_signatures.sql` | Signatures (colonnes `*_signature*`) + RPC `sign_*_as_employee` |
 | 011 | `011_epp_framework_4_8_years.sql` | **Préparée, non poussée.** Correction réglementaire EPP : métadonnées (`COMMENT ON`) documentant le cadre 4 ans / 8 ans (remplace biennal / 6 ans) |
-| 012 | `012_epp_proof_and_audit.sql` | **Préparée, non poussée.** EPP preuve (Lot A) : colonnes `signed_snapshot`, `delivered_at/by`, `created_by`, `updated_by` + triggers (audit, gel du snapshot à la double signature, verrouillage immuable) |
+| 012 | `012_epp_proof_and_audit.sql` | **Préparée, non poussée.** EPP preuve (Lot A, amendée post-audit) : colonnes `signed_snapshot`, `delivered_at/by`, `created_by`, `updated_by` + triggers (audit, gel du snapshot à la double signature, verrou dérivé des signatures, colonnes anti-forge, remise one-shot post-signature), backfill des entretiens déjà signés, garde anti-re-signature dans la RPC salarié |
 
 ### 14.3 Edge Functions
 

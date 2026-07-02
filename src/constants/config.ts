@@ -65,6 +65,11 @@ export const PROFESSIONAL_INTERVIEW_CONFIG = {
   periodicityYears: 4,
   // Périodicité de l'état des lieux récapitulatif, en années.
   stateOfPlayYears: 8,
+  // Traçabilité de la remise du compte-rendu au salarié. Nécessite les
+  // colonnes delivered_at/delivered_by de la migration 012 : laisser à false
+  // tant qu'elle n'est pas appliquée sur Supabase (sinon l'action échouerait
+  // systématiquement), passer à true juste après l'avoir poussée.
+  deliveryTrackingEnabled: false,
 } as const;
 
 // Configuration des objectifs

@@ -292,6 +292,11 @@ export interface ProfessionalCampaign {
 export interface ProfessionalInterviewSnapshot {
   version: number;
   frozenAt: string;
+  // true pour les entretiens signés avant la migration 012, dont le snapshot
+  // a été reconstitué par backfill (frozenAt = date de la 2e signature).
+  backfilled?: boolean;
+  employeeId?: string;
+  conductedAt?: string;
   careerReview: string;
   skillsAcquired: string;
   evolutionMobility: MobilityWish;

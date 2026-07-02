@@ -6,6 +6,7 @@ import { Card, Button, TextArea, CampaignStatusBadge, SignaturePad } from '@/com
 import { BackButton } from '@/components/layout';
 import { useNavigation, useProfessionalInterviews, useUser, useToast } from '@/hooks';
 import { colors } from '@/constants/colors';
+import { PROFESSIONAL_INTERVIEW_CONFIG } from '@/constants/config';
 import { isProfessionalInterviewLocked, formatDate } from '@/utils/helpers';
 import { printProfessionalInterviewReport } from '@/services/professional-interview-export';
 
@@ -75,6 +76,14 @@ export const ProfessionalInterviewView: React.FC = () => {
     setDirty(true);
   };
 
+  const saveErrorToast = (err: unknown) => {
+    toast.error(
+      err instanceof Error && err.message === 'professionalInterview.lockedError'
+        ? t('professionalInterview.lockedError')
+        : t('toast.genericError')
+    );
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -82,6 +91,8 @@ export const ProfessionalInterviewView: React.FC = () => {
         interview.status === 'scheduled' ? 'in_progress' : interview.status;
       await updateProfessionalInterview(interview.id, { ...form, status });
       setDirty(false);
+    } catch (err) {
+      saveErrorToast(err);
     } finally {
       setSaving(false);
     }
@@ -92,6 +103,8 @@ export const ProfessionalInterviewView: React.FC = () => {
     try {
       await updateProfessionalInterview(interview.id, { ...form, status: 'completed' });
       setDirty(false);
+    } catch (err) {
+      saveErrorToast(err);
     } finally {
       setSaving(false);
     }
@@ -342,13 +355,16 @@ export const ProfessionalInterviewView: React.FC = () => {
             {t('professionalReport.print')}
           </Button>
 
+          {/* La date de remise s'affiche dès qu'elle existe ; l'action de
+              remise est masquée tant que la migration 012 (colonnes
+              delivered_*) n'est pas appliquée — voir deliveryTrackingEnabled. */}
           {!isEmployee && (
             interview.deliveredAt ? (
               <span className="inline-flex items-center gap-2 text-sm text-emerald-700">
                 <PackageCheck size={16} />
                 {t('professionalReport.deliveredOn')} {formatDate(interview.deliveredAt)}
               </span>
-            ) : locked ? (
+            ) : !PROFESSIONAL_INTERVIEW_CONFIG.deliveryTrackingEnabled ? null : locked ? (
               <Button variant="primary" onClick={handleDeliver} disabled={delivering}>
                 <PackageCheck size={16} className="mr-1" />
                 {delivering ? t('common.loading') : t('professionalReport.markDelivered')}
