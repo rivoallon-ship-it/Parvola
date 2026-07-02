@@ -41,7 +41,7 @@ Parvola/
 │   │   ├── ai-proxy/       # Proxy sécurisé vers Anthropic
 │   │   ├── invite-user/    # Invitation d'utilisateurs (admin/RH)
 │   │   └── signup-company/ # Création de compte entreprise
-│   ├── migrations/         # 001 → 013
+│   ├── migrations/         # 001 → 014
 │   └── seed.sql            # Données de démo (Sushi Neko)
 ├── vercel.json             # Config Vercel (headers, rewrites)
 ├── vite.config.ts
@@ -125,6 +125,7 @@ Composant → Hook / Service (supabase-data.ts)
 | 011 | `011_epp_framework_4_8_years.sql` | Correction réglementaire EPP : métadonnées `COMMENT ON` du cadre 4 ans / 8 ans (préparée, non poussée) |
 | 012 | `012_epp_proof_and_audit.sql` | EPP preuve/verrouillage/remise/audit : colonnes snapshot/remise/audit + triggers immutabilité, backfill, anti-forge (préparée, non poussée) |
 | 013 | `013_employee_hire_date.sql` | Colonne `employees.hire_date` — échéances EPP 1 an / 8 ans (préparée, non poussée) |
+| 014 | `014_evaluation_followup_audit.sql` | Suivi RH Talent Review : relances (`last_reminder_at`/`reminder_count`) + audit validation (`validated_by`/`validated_at`) + trigger (préparée, non poussée) |
 
 ---
 

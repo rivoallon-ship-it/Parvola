@@ -24,6 +24,7 @@ import {
   deleteObjectiveDb,
   reorderObjectivesDb,
   signEvaluationAsEmployee,
+  markEvaluationReminded,
 } from '@/services/supabase-data';
 import { calculateDeadline } from '@/utils/helpers';
 import { OBJECTIVE_CONFIG } from '@/constants/config';
@@ -412,6 +413,16 @@ export const SemesterProvider: React.FC<SemesterProviderProps> = ({
     }
   }, [state.evaluations]);
 
+  const remindEvaluation = useCallback(async (evaluationId: string) => {
+    // Trace la relance (le compteur est incrémenté côté serveur). Sans effet
+    // en base tant que le flag/migration ne sont pas actifs — l'e-mail de
+    // relance (mailto) est déclenché séparément côté UI.
+    const remindedAt = await markEvaluationReminded(evaluationId);
+    if (remindedAt) {
+      dispatch({ type: 'UPDATE_EVALUATION', payload: { id: evaluationId, changes: { lastReminderAt: remindedAt } } });
+    }
+  }, []);
+
   const value: SemesterContextType = {
     ...state,
     addSemester,
@@ -432,6 +443,7 @@ export const SemesterProvider: React.FC<SemesterProviderProps> = ({
     updateEvaluationBilan,
     updateEvaluationRatings,
     signEvaluation,
+    remindEvaluation,
     setEvaluations,
   };
 

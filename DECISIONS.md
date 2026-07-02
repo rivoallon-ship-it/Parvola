@@ -525,6 +525,7 @@ companies
 | 011 | `011_epp_framework_4_8_years.sql` | **Préparée, non poussée.** Correction réglementaire EPP : métadonnées (`COMMENT ON`) documentant le cadre 4 ans / 8 ans (remplace biennal / 6 ans) |
 | 012 | `012_epp_proof_and_audit.sql` | **Préparée, non poussée.** EPP preuve (Lot A, amendée post-audit) : colonnes `signed_snapshot`, `delivered_at/by`, `created_by`, `updated_by` + triggers (audit, gel du snapshot à la double signature, verrou dérivé des signatures, colonnes anti-forge, remise one-shot post-signature), backfill des entretiens déjà signés, garde anti-re-signature dans la RPC salarié |
 | 013 | `013_employee_hire_date.sql` | **Préparée, non poussée.** Colonne `employees.hire_date` (nullable) — ancre les échéances EPP 1 an / 8 ans (Lot B) |
+| 014 | `014_evaluation_followup_audit.sql` | **Préparée, non poussée.** Suivi RH Talent Review (Lot C) : colonnes `last_reminder_at`, `reminder_count`, `validated_by`, `validated_at` + trigger (audit validation, compteur de relances, anti-forge) |
 
 ### 14.3 Edge Functions
 

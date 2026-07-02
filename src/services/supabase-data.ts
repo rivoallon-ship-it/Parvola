@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { EMPLOYEE_CONFIG } from '@/constants/config';
+import { EMPLOYEE_CONFIG, TALENT_REVIEW_CONFIG } from '@/constants/config';
 import type {
   Establishment,
   Team,
@@ -357,10 +357,29 @@ const mapEvaluation = (row: DbEvaluation & { objectives: DbObjective[] }): Evalu
   employeeSignatureName: row.employee_signature_name || undefined,
   managerSignature: row.manager_signature || undefined,
   managerSignatureName: row.manager_signature_name || undefined,
+  // Lot C — présents une fois la migration 014 appliquée, sinon undefined
+  lastReminderAt: row.last_reminder_at || undefined,
+  reminderCount: row.reminder_count ?? undefined,
+  validatedBy: row.validated_by || undefined,
+  validatedAt: row.validated_at || undefined,
   objectives: (row.objectives || [])
     .sort((a, b) => a.order_index - b.order_index)
     .map(mapObjective),
 });
+
+/**
+ * Trace une relance RH sur une évaluation (horodatage). `reminder_count` est
+ * incrémenté côté serveur par le trigger de la migration 014. Ne rien écrire
+ * tant que le flag n'est pas activé (colonne inexistante avant la migration).
+ */
+export async function markEvaluationReminded(id: string): Promise<string | null> {
+  if (!TALENT_REVIEW_CONFIG.reminderTrackingEnabled) return null;
+  const remindedAt = new Date().toISOString();
+  throwIfMutationError(
+    await supabase.from('evaluations').update({ last_reminder_at: remindedAt }).eq('id', id)
+  );
+  return remindedAt;
+}
 
 export async function fetchEvaluations(): Promise<Evaluation[]> {
   const data = throwIfError(

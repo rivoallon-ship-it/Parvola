@@ -4,7 +4,7 @@ import { AppProvider, ToastProvider } from '@/context';
 import { useNavigation } from '@/hooks';
 import { Navigation } from '@/components/layout';
 import { EmployeeList } from '@/components/employees';
-import { SemesterTeamView } from '@/components/semesters';
+import { SemesterTeamView, CampaignFollowUpView } from '@/components/semesters';
 import { CampaignList } from '@/components/campaigns';
 import { EvaluationView, MyEvaluationsView } from '@/components/evaluations';
 import { TemplateList } from '@/components/templates';
@@ -41,6 +41,8 @@ const AppContent: React.FC = () => {
         return <CampaignList />;
       case 'semester-team':
         return <SemesterTeamView />;
+      case 'campaign-followup':
+        return <CampaignFollowUpView />;
       case 'team':
         return <EmployeeList />;
       case 'templates':

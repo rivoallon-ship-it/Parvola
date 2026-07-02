@@ -91,6 +91,11 @@ export interface DbEvaluation {
   employee_signature_name: string | null;
   manager_signature: string | null;
   manager_signature_name: string | null;
+  // Lot C — nécessite la migration 014 ; absents en attendant
+  last_reminder_at?: string | null;
+  reminder_count?: number | null;
+  validated_by?: string | null;
+  validated_at?: string | null;
   created_at: string;
   updated_at: string;
 }

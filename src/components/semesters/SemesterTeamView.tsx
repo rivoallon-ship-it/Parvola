@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { Calendar, Target, ChevronRight, ChevronDown, Users, Building2, AlertTriangle } from 'lucide-react';
+import { Calendar, Target, ChevronRight, ChevronDown, Users, Building2, AlertTriangle, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Employee, EvaluationStatus } from '@/types';
-import { Card, EmptyState, CampaignStatusBadge, EvaluationStatusBadge } from '@/components/common';
+import { Card, Button, EmptyState, CampaignStatusBadge, EvaluationStatusBadge } from '@/components/common';
 import { CampaignProgressSummary } from './CampaignProgressSummary';
 import { BackButton } from '@/components/layout';
 import { useNavigation, useEmployees, useSemesters, useOrganization, useUser } from '@/hooks';
 import { colors } from '@/constants/colors';
 import { getSemesterPeriod, formatDate } from '@/utils/helpers';
-import { getEmployeesInScope } from '@/utils/permissions';
+import { getEmployeesInScope, isEvaluator } from '@/utils/permissions';
 
 // ============================================
 // Composant SemesterTeamView (Vue équipe d'un semestre)
@@ -252,6 +252,12 @@ export const SemesterTeamView: React.FC = () => {
                 {semesterStats.totalObjectives} {t('semesterTeam.objectives')}
               </p>
             </div>
+          )}
+          {!isDraft && isEvaluator(currentUser.role) && (
+            <Button variant="secondary" onClick={() => setCurrentView('campaign-followup')}>
+              <Bell size={16} className="mr-1" />
+              {t('campaignFollowUp.title')}
+            </Button>
           )}
         </div>
 

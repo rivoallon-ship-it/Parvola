@@ -45,6 +45,15 @@ export const CAMPAIGN_CONFIG = {
   defaultStatus: 'draft' as const,
 } as const;
 
+// Configuration Talent Review (suivi RH)
+export const TALENT_REVIEW_CONFIG = {
+  // Traçabilité des relances (last_reminder_at / reminder_count). Nécessite la
+  // migration 014 : laisser à false tant qu'elle n'est pas appliquée (sinon la
+  // relance échouerait), passer à true juste après. La relance par e-mail
+  // (mailto) reste fonctionnelle indépendamment de ce flag.
+  reminderTrackingEnabled: false,
+} as const;
+
 // Configuration employés
 export const EMPLOYEE_CONFIG = {
   // Date d'embauche : nécessite la colonne hire_date (migration 013).

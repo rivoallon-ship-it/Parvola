@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import type { Employee, Semester, Objective } from '@/types';
+import type { Employee, Semester, Objective, EvaluationStatus } from '@/types';
 import { getRandomEmoji, getStatusLabel } from '@/utils/helpers';
 import i18n from '@/i18n';
 
@@ -387,6 +387,134 @@ export const printExport = (data: ExportData): void => {
   const html = generateExportHTML(data);
   const printWindow = window.open('', '_blank');
 
+  if (printWindow) {
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => printWindow.print(), 250);
+  }
+};
+
+// ============================================
+// Synthèse de campagne (suivi RH — Lot C)
+// ============================================
+// Export d'avancement d'une campagne d'évaluation : une ligne par salarié
+// (statut, objectifs, progression). Volontairement centré sur le SUIVI —
+// pas de note 9-box ici, la matrice a sa propre vue.
+
+export interface CampaignSummaryRow {
+  employeeName: string;
+  position: string;
+  establishmentName: string;
+  teamName: string;
+  status: EvaluationStatus;
+  statusLabel: string;
+  objectiveCount: number;
+  avgProgress: number;
+  lastReminderAt?: string;
+}
+
+export interface CampaignSummaryData {
+  semester: Semester;
+  rows: CampaignSummaryRow[];
+  counts: Record<EvaluationStatus, number>;
+  generatedAt: string;
+}
+
+const STATUS_ROW_COLOR: Record<EvaluationStatus, string> = {
+  not_started: '#9CA3AF',
+  in_progress: '#3B82F6',
+  submitted: '#F59E0B',
+  validated: '#10B981',
+};
+
+const evalStatusI18nKey = (s: EvaluationStatus): string =>
+  s === 'not_started' ? 'evaluationStatus.notStarted'
+    : s === 'in_progress' ? 'evaluationStatus.inProgress'
+    : `evaluationStatus.${s}`;
+
+export const generateCampaignSummaryHTML = (data: CampaignSummaryData): string => {
+  const { semester, rows, counts } = data;
+
+  const countsHTML = (['validated', 'submitted', 'in_progress', 'not_started'] as EvaluationStatus[])
+    .map(
+      (s) => `
+      <span class="count-chip">
+        <span class="dot" style="background:${STATUS_ROW_COLOR[s]}"></span>
+        ${escapeHtml(t(evalStatusI18nKey(s)))}: ${counts[s]}
+      </span>`
+    )
+    .join('');
+
+  const rowsHTML = rows
+    .map(
+      (r) => `
+      <tr>
+        <td>${escapeHtml(r.employeeName)}</td>
+        <td>${escapeHtml(r.position)}</td>
+        <td>${escapeHtml(r.establishmentName)}</td>
+        <td>${escapeHtml(r.teamName)}</td>
+        <td><span class="status-pill" style="background:${STATUS_ROW_COLOR[r.status]}">${escapeHtml(r.statusLabel)}</span></td>
+        <td class="num">${r.objectiveCount}</td>
+        <td class="num">${r.objectiveCount > 0 ? `${r.avgProgress}%` : '—'}</td>
+        <td>${r.lastReminderAt ? escapeHtml(new Date(r.lastReminderAt).toLocaleDateString(i18n.language || 'fr')) : '—'}</td>
+      </tr>`
+    )
+    .join('');
+
+  return `
+    <!DOCTYPE html>
+    <html lang="${i18n.language || 'fr'}">
+    <head>
+      <meta charset="utf-8" />
+      <title>${escapeHtml(t('campaignFollowUp.exportTitle'))} — ${escapeHtml(semester.name)}</title>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; margin: 40px; color: #2C2C2C; }
+        .header { border-bottom: 3px solid #008D7E; padding-bottom: 16px; margin-bottom: 20px; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .header .subtitle { color: #555; margin-top: 4px; font-size: 14px; }
+        .counts { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 20px; font-size: 13px; }
+        .count-chip { display: inline-flex; align-items: center; gap: 6px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #E5E7EB; }
+        th { color: #555; font-weight: 600; background: #F9FAFB; }
+        td.num { text-align: right; }
+        .status-pill { color: #fff; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+        .footer { margin-top: 24px; font-size: 11px; color: #999; }
+        @media print { body { margin: 0; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>${escapeHtml(t('campaignFollowUp.exportTitle'))}</h1>
+        <p class="subtitle">${escapeHtml(semester.name)} — ${escapeHtml(t('campaignFollowUp.generatedAt'))} ${escapeHtml(new Date(data.generatedAt).toLocaleDateString(i18n.language || 'fr'))}</p>
+      </div>
+      <div class="counts">${countsHTML}</div>
+      <table>
+        <thead>
+          <tr>
+            <th>${escapeHtml(t('campaignFollowUp.colEmployee'))}</th>
+            <th>${escapeHtml(t('campaignFollowUp.colPosition'))}</th>
+            <th>${escapeHtml(t('campaignFollowUp.colEstablishment'))}</th>
+            <th>${escapeHtml(t('campaignFollowUp.colTeam'))}</th>
+            <th>${escapeHtml(t('campaignFollowUp.colStatus'))}</th>
+            <th>${escapeHtml(t('campaignFollowUp.colObjectives'))}</th>
+            <th>${escapeHtml(t('campaignFollowUp.colProgress'))}</th>
+            <th>${escapeHtml(t('campaignFollowUp.colLastReminder'))}</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHTML}</tbody>
+      </table>
+      <p class="footer">${escapeHtml(t('campaignFollowUp.exportFooter'))}</p>
+    </body>
+    </html>`;
+};
+
+export const printCampaignSummary = (data: CampaignSummaryData): void => {
+  const html = generateCampaignSummaryHTML(data);
+  const printWindow = window.open('', '_blank');
   if (printWindow) {
     printWindow.document.write(html);
     printWindow.document.close();

@@ -15,7 +15,7 @@ export type ProfessionalInterviewStatus = 'scheduled' | 'in_progress' | 'complet
 
 export type MobilityWish = 'none' | 'internal' | 'external' | 'geographic';
 
-export type ViewType = 'semesters' | 'semester-team' | 'team' | 'templates' | 'evaluation' | 'nine-box' | 'my-evaluations' | 'settings' | 'professional-campaigns' | 'professional-team' | 'professional-interview' | 'my-professional-interviews' | 'professional-history';
+export type ViewType = 'semesters' | 'semester-team' | 'team' | 'templates' | 'evaluation' | 'nine-box' | 'my-evaluations' | 'settings' | 'professional-campaigns' | 'professional-team' | 'professional-interview' | 'my-professional-interviews' | 'professional-history' | 'campaign-followup';
 
 // ---------- Utilisateurs & Rôles ----------
 export type UserRole = 'admin' | 'rh' | 'directeur' | 'manager' | 'employee';
@@ -151,6 +151,11 @@ export interface Evaluation {
   employeeSignatureName?: string;
   managerSignature?: string;
   managerSignatureName?: string;
+  // Suivi RH & audit (Lot C — nécessite migration 014)
+  lastReminderAt?: string;
+  reminderCount?: number;
+  validatedBy?: string;
+  validatedAt?: string;
 }
 
 export interface Position {
@@ -452,6 +457,7 @@ export interface SemesterActions {
   updateEvaluationBilan: (employeeId: string, semesterId: string, field: 'bilanManager' | 'bilanEmployee', value: string) => Promise<void>;
   updateEvaluationRatings: (employeeId: string, semesterId: string, performanceRating: NineBoxRating, potentialRating: NineBoxRating) => Promise<void>;
   signEvaluation: (employeeId: string, semesterId: string, by: 'employee' | 'manager', signature: string, name: string) => Promise<void>;
+  remindEvaluation: (evaluationId: string) => Promise<void>;
   setEvaluations: (evaluations: Evaluation[]) => void;
 }
 

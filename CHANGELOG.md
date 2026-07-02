@@ -4,6 +4,60 @@ Toutes les modifications notables du projet Parvola (ex-Talent Review) sont docu
 
 ---
 
+## [1.13.0] — 2026-07-02
+
+### Talent Review — Lot C : suivi RH (retardataires, relances, synthèse, audit)
+
+Outillage de pilotage RH d'une campagne d'évaluation, pour une entreprise
+d'une centaine de salariés. Domaine Talent Review **uniquement** — aucune
+interaction avec les EPP.
+
+#### Vue de suivi RH (`campaign-followup`)
+- Nouveau `CampaignFollowUpView`, accessible via un bouton « Suivi RH » dans
+  l'en-tête de la vue équipe d'une campagne (admin/RH/directeur/manager,
+  données scopées par rôle). Campagne en brouillon exclue.
+- **Tableau des retardataires** : salariés dont l'évaluation n'est pas
+  validée (non démarrée / en cours / soumise), triés du plus en retard au
+  plus avancé, avec bascule « retardataires seuls / tout le monde ».
+- Bandeau d'échéance dépassée mis en évidence quand la date de clôture est
+  passée. Compteurs par statut (réutilise `CampaignProgressSummary`).
+
+#### Relances manuelles
+- Bouton « Relancer » par retardataire : ouvre le client mail (`mailto:`)
+  avec objet et corps pré-remplis (i18n) — **aucune infrastructure serveur
+  d'envoi**. Désactivé si le salarié n'a pas d'e-mail.
+- **Traçabilité** : `last_reminder_at` horodaté et `reminder_count`
+  incrémenté côté serveur (migration 014), affichés dans la liste. L'écriture
+  est gatée par `TALENT_REVIEW_CONFIG.reminderTrackingEnabled` (l'e-mail,
+  lui, fonctionne sans la migration).
+
+#### Export de synthèse
+- `printCampaignSummary` (`excel.ts`) : synthèse imprimable/PDF d'avancement
+  (salarié × statut × objectifs × progression × dernière relance).
+  Volontairement **sans note 9-box** — la matrice garde sa propre vue.
+
+#### Audit minimal de validation
+- `validated_by` / `validated_at` stampés **côté serveur** (`auth.uid()`) à
+  la transition vers `validated`, non forgeables (trigger migration 014).
+  Backfill de `validated_at` pour les évaluations déjà validées.
+
+#### Base de données
+- **Migration `014_evaluation_followup_audit.sql`** (préparée, **non
+  poussée**) : colonnes `last_reminder_at`, `reminder_count`, `validated_by`,
+  `validated_at` + trigger (audit validation, compteur de relances,
+  anti-forge). Le verrouillage post-validation existant (lecture seule)
+  reste inchangé.
+
+#### Fichiers
+- Nouveaux : `CampaignFollowUpView.tsx`,
+  `supabase/migrations/014_evaluation_followup_audit.sql`.
+- Modifiés : `types/index.ts`, `database.types.ts`, `config.ts`
+  (`TALENT_REVIEW_CONFIG`), `supabase-data.ts`, `SemesterContext.tsx`,
+  `services/excel.ts`, `SemesterTeamView.tsx`, `App.tsx`, `semesters/index.ts`,
+  `locales/{fr,en,es}.json`.
+
+---
+
 ## [1.12.0] — 2026-07-02
 
 ### EPP — Lot B : historique salarié & échéances légales
