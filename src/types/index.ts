@@ -15,7 +15,7 @@ export type ProfessionalInterviewStatus = 'scheduled' | 'in_progress' | 'complet
 
 export type MobilityWish = 'none' | 'internal' | 'external' | 'geographic';
 
-export type ViewType = 'semesters' | 'semester-team' | 'team' | 'templates' | 'evaluation' | 'nine-box' | 'my-evaluations' | 'settings' | 'professional-campaigns' | 'professional-team' | 'professional-interview' | 'my-professional-interviews';
+export type ViewType = 'semesters' | 'semester-team' | 'team' | 'templates' | 'evaluation' | 'nine-box' | 'my-evaluations' | 'settings' | 'professional-campaigns' | 'professional-team' | 'professional-interview' | 'my-professional-interviews' | 'professional-history';
 
 // ---------- Utilisateurs & Rôles ----------
 export type UserRole = 'admin' | 'rh' | 'directeur' | 'manager' | 'employee';
@@ -110,6 +110,9 @@ export interface Employee {
   lateCount?: number;
   unjustifiedAbsences?: number;
   justifiedAbsences?: number;
+  // Ancre les échéances EPP (1er entretien à 1 an, état des lieux 8 ans).
+  // Nécessite la migration 013 (voir EMPLOYEE_CONFIG.hireDateEnabled).
+  hireDate?: string;
 }
 
 export interface Semester {
@@ -188,6 +191,7 @@ export interface NewEmployeeForm {
   lateCount?: number;
   unjustifiedAbsences?: number;
   justifiedAbsences?: number;
+  hireDate?: string;
 }
 
 export interface NewSemesterForm {

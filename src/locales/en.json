@@ -661,5 +661,21 @@
   "professionalReport.deliveredOn": "Handed to the employee on",
   "professionalReport.deliverAfterSignature": "Delivery can be recorded once the interview is signed.",
   "professionalReport.heldOn": "Interview held on",
-  "professionalReport.footer": "Professional interview — separate from the annual performance review."
+  "professionalReport.footer": "Professional interview — separate from the annual performance review.",
+  "professionalInterview.conductedAt": "Interview held on",
+  "professionalInterview.status.signed": "Signed",
+  "professionalHistory.title": "Professional interview history",
+  "professionalHistory.open": "History",
+  "professionalHistory.deadlines": "Legal deadlines (4-year / 8-year framework)",
+  "professionalHistory.hireDate": "Hire date",
+  "professionalHistory.hireDateMissing": "Hire date not set",
+  "professionalHistory.lastInterview": "Last interview held",
+  "professionalHistory.noInterviewYet": "No interview held yet",
+  "professionalHistory.nextDue": "Next interview (theoretical)",
+  "professionalHistory.stateOfPlayDue": "8-year review (theoretical)",
+  "professionalHistory.overdue": "Overdue",
+  "professionalHistory.none": "No professional interview for this employee.",
+  "professionalHistory.noDate": "Held date not set",
+  "professionalHistory.unknownCampaign": "Deleted campaign",
+  "employeeForm.hireDate": "Hire date"
 }

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { EMPLOYEE_CONFIG } from '@/constants/config';
 import type {
   Establishment,
   Team,
@@ -135,7 +136,14 @@ const mapEmployee = (row: DbEmployee): Employee => ({
   lateCount: row.late_count,
   unjustifiedAbsences: row.unjustified_absences,
   justifiedAbsences: row.justified_absences,
+  hireDate: row.hire_date || undefined,
 });
+
+// La colonne hire_date n'existe qu'à partir de la migration 013 : ne
+// l'inclure dans les écritures que lorsque le flag est activé, sinon toute
+// sauvegarde employé échouerait (colonne inconnue côté PostgREST).
+const hireDateColumn = (hireDate?: string): Record<string, string | null> =>
+  EMPLOYEE_CONFIG.hireDateEnabled ? { hire_date: hireDate || null } : {};
 
 export async function fetchEmployees(): Promise<Employee[]> {
   const data = throwIfError(await supabase.from('employees').select('*').order('name'));
@@ -155,6 +163,7 @@ export async function insertEmployee(form: NewEmployeeForm): Promise<Employee> {
       late_count: form.lateCount || 0,
       unjustified_absences: form.unjustifiedAbsences || 0,
       justified_absences: form.justifiedAbsences || 0,
+      ...hireDateColumn(form.hireDate),
     }).select().single()
   );
   return mapEmployee(data);
@@ -172,6 +181,7 @@ export async function insertEmployees(forms: Omit<Employee, 'id'>[], establishme
     late_count: f.lateCount || 0,
     unjustified_absences: f.unjustifiedAbsences || 0,
     justified_absences: f.justifiedAbsences || 0,
+    ...hireDateColumn(f.hireDate),
   }));
   const data = throwIfError(await supabase.from('employees').insert(rows).select());
   return data.map(mapEmployee);
@@ -190,6 +200,7 @@ export async function updateEmployeeDb(emp: Employee): Promise<void> {
       late_count: emp.lateCount || 0,
       unjustified_absences: emp.unjustifiedAbsences || 0,
       justified_absences: emp.justifiedAbsences || 0,
+      ...hireDateColumn(emp.hireDate),
     }).eq('id', emp.id)
   );
 }

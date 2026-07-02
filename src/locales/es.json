@@ -660,5 +660,21 @@
   "professionalReport.deliveredOn": "Entregado al empleado el",
   "professionalReport.deliverAfterSignature": "La entrega podrá registrarse una vez firmada la entrevista.",
   "professionalReport.heldOn": "Entrevista realizada el",
-  "professionalReport.footer": "Entrevista profesional — dispositivo distinto de la evaluación anual del desempeño."
+  "professionalReport.footer": "Entrevista profesional — dispositivo distinto de la evaluación anual del desempeño.",
+  "professionalInterview.conductedAt": "Entrevista realizada el",
+  "professionalInterview.status.signed": "Firmada",
+  "professionalHistory.title": "Historial de entrevistas profesionales",
+  "professionalHistory.open": "Historial",
+  "professionalHistory.deadlines": "Plazos legales (marco de 4 / 8 años)",
+  "professionalHistory.hireDate": "Fecha de contratación",
+  "professionalHistory.hireDateMissing": "Fecha de contratación no indicada",
+  "professionalHistory.lastInterview": "Última entrevista realizada",
+  "professionalHistory.noInterviewYet": "Ninguna entrevista realizada",
+  "professionalHistory.nextDue": "Próxima entrevista (teórica)",
+  "professionalHistory.stateOfPlayDue": "Balance de 8 años (teórico)",
+  "professionalHistory.overdue": "Plazo vencido",
+  "professionalHistory.none": "Ninguna entrevista profesional para este empleado.",
+  "professionalHistory.noDate": "Fecha de realización no indicada",
+  "professionalHistory.unknownCampaign": "Campaña eliminada",
+  "employeeForm.hireDate": "Fecha de contratación"
 }

@@ -7,6 +7,7 @@ import { useUser } from '@/hooks';
 import { canInviteUsers } from '@/utils/permissions';
 import { fetchProfileByEmployeeId, sendEmployeeInvitation } from '@/services/supabase-data';
 import { colors } from '@/constants/colors';
+import { EMPLOYEE_CONFIG } from '@/constants/config';
 
 // ============================================
 // Composant EmployeeForm
@@ -61,6 +62,7 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
     email: employee?.email || '',
     establishmentId: employee?.establishmentId || defaultEstablishmentId || '',
     teamId: employee?.teamId || '',
+    hireDate: employee?.hireDate || '',
   });
 
   const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
@@ -196,6 +198,16 @@ export const EmployeeForm: React.FC<EmployeeFormProps> = ({
           value={form.email || ''}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
         />
+        {/* Date d'embauche : ancre les échéances EPP (1 an / 8 ans). Masquée
+            tant que la migration 013 n'est pas appliquée. */}
+        {EMPLOYEE_CONFIG.hireDateEnabled && (
+          <Input
+            type="date"
+            label={t('employeeForm.hireDate')}
+            value={form.hireDate || ''}
+            onChange={(e) => setForm({ ...form, hireDate: e.target.value })}
+          />
+        )}
         {/* Invite button — only in edit mode with email */}
         {isEditing && employee && form.email && showInvite && (
           <div className="flex items-center gap-3">

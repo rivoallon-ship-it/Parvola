@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Briefcase, CheckCircle2, Clock, Circle } from 'lucide-react';
+import { Users, Briefcase, CheckCircle2, Clock, Circle, History } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Employee, ProfessionalInterview } from '@/types';
 import { Card, EmptyState, CampaignStatusBadge } from '@/components/common';
@@ -54,6 +54,11 @@ export const ProfessionalTeamView: React.FC = () => {
     }
     setViewingProfessionalInterview(interview);
     setCurrentView('professional-interview');
+  };
+
+  const handleOpenHistory = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setCurrentView('professional-history');
   };
 
   return (
@@ -125,6 +130,13 @@ export const ProfessionalTeamView: React.FC = () => {
                     {!interview && !isDraft && (
                       <p className="text-xs text-gray-400 mt-1">{t('professionalInterview.notStarted')}</p>
                     )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleOpenHistory(emp); }}
+                      className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-teal-700 hover:text-teal-900"
+                    >
+                      <History size={14} />
+                      {t('professionalHistory.open')}
+                    </button>
                   </div>
                   {interview && (
                     <span

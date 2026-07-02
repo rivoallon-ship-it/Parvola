@@ -4,6 +4,55 @@ Toutes les modifications notables du projet Parvola (ex-Talent Review) sont docu
 
 ---
 
+## [1.12.0] — 2026-07-02
+
+### EPP — Lot B : historique salarié & échéances légales
+
+Livraison du volet « historique » du domaine entretien professionnel
+(roadmap §8bis.5 Lot 4), toujours sans contamination du domaine Talent
+Review : l'historique a son **écran dédié**, pas un onglet dans la fiche
+d'évaluation.
+
+#### Écran « Historique EPP » (`professional-history`)
+- Nouveau `ProfessionalEmployeeHistoryView` : chronologie des entretiens du
+  salarié (toutes campagnes), avec date de tenue, statut (dont « Signé »
+  dérivé de la double signature), date de signature et date de remise.
+  Clic → ouverture de l'entretien.
+- **Échéances légales calculées** (helpers du Lot 0 enfin branchés) :
+  dernier entretien mené, prochain entretien théorique (périodicité 4 ans,
+  ou 1re année après l'embauche si aucun entretien), état des lieux 8 ans.
+  Les échéances dépassées sont signalées en rouge.
+- Accès : bouton « Historique » sur chaque carte salarié de la vue équipe
+  EPP (RH/manager/directeur — l'écran est inaccessible au rôle employé).
+- Côté salarié : « Mes entretiens pro » affiche sa propre prochaine
+  échéance théorique.
+
+#### Date de tenue enfin capturée
+- Champ « Entretien tenu le » (`conductedAt`) dans l'en-tête de la saisie —
+  il n'était **jamais renseigné** jusqu'ici, rendant les échéances 4 ans
+  incalculables. À la complétion, la date du jour est posée automatiquement
+  si le champ est vide.
+
+#### Date d'embauche (migration 013, préparée non poussée)
+- **Migration `013_employee_hire_date.sql`** : colonne `employees.hire_date`
+  (nullable) — ancre le 1er entretien (1 an) et l'état des lieux (8 ans).
+- Champ « Date d'embauche » dans le formulaire employé, **masqué derrière
+  `EMPLOYEE_CONFIG.hireDateEnabled`** (même pattern que la remise Lot A) :
+  aucune écriture de la colonne tant que la migration n'est pas appliquée.
+  L'UI affiche « date d'embauche non renseignée » et n'affiche pas
+  d'échéance 8 ans en attendant.
+
+#### Fichiers
+- Nouveaux : `ProfessionalEmployeeHistoryView.tsx`,
+  `supabase/migrations/013_employee_hire_date.sql`.
+- Modifiés : `types/index.ts` (ViewType `professional-history`, `hireDate`),
+  `database.types.ts`, `config.ts` (`EMPLOYEE_CONFIG`), `supabase-data.ts`,
+  `EmployeeForm.tsx`, `ProfessionalInterviewView.tsx`,
+  `ProfessionalTeamView.tsx`, `MyProfessionalInterviewsView.tsx`, `App.tsx`,
+  `locales/{fr,en,es}.json`.
+
+---
+
 ## [1.11.1] — 2026-07-02
 
 ### EPP — Lot A amendé suite à l'audit (preuve renforcée)

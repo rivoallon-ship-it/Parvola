@@ -44,22 +44,25 @@ transcript peut pousser des migrations, gérer les Edge Functions, etc.
 
 ## Migrations en attente d'application
 
-### [P1] Appliquer les migrations 011 + 012 puis activer la remise EPP
+### [P1] Appliquer les migrations 011 + 012 + 013 puis activer les flags
 
-Les migrations `011_epp_framework_4_8_years.sql` (documentaire) et
+Les migrations `011_epp_framework_4_8_years.sql` (documentaire),
 `012_epp_proof_and_audit.sql` (preuve/verrouillage EPP, amendée post-audit)
+et `013_employee_hire_date.sql` (date d'embauche, échéances EPP 1 an/8 ans)
 sont **préparées mais non poussées** — application sur Supabase uniquement
 après validation explicite (voir la règle sécurité en tête de chantier).
 
 **Séquence au moment de l'application** :
-1. `npx supabase db push --linked` (011 + 012).
-2. Passer `deliveryTrackingEnabled` à `true` dans
-   `src/constants/config.ts` (`PROFESSIONAL_INTERVIEW_CONFIG`) et déployer
-   le frontend — l'action « Marquer comme remis » est masquée tant que ce
-   flag est à `false`.
+1. `npx supabase db push --linked` (011 + 012 + 013).
+2. Dans `src/constants/config.ts`, passer à `true` :
+   - `PROFESSIONAL_INTERVIEW_CONFIG.deliveryTrackingEnabled` (remise EPP),
+   - `EMPLOYEE_CONFIG.hireDateEnabled` (date d'embauche),
+   puis déployer le frontend — ces actions restent masquées tant que les
+   flags sont à `false`.
 3. Vérifier le scénario de recette : signature salarié → signature manager
    → snapshot créé → modification refusée → remise acceptée → export
-   conforme au snapshot.
+   conforme au snapshot ; puis renseigner une date d'embauche et vérifier
+   les échéances dans l'historique EPP.
 
 ⚠️ Tant que 012 n'est pas appliquée, le verrouillage post-signature n'est
 appliqué que côté applicatif (contournable par appel API direct) : les EPP

@@ -329,7 +329,7 @@ ultérieur (Lot 4, historique sur fiche employé).
 | **1** | Fondations (DB, types, services, contexte) | **Livré (1.6.0)** |
 | **2** | CRUD campagnes pro (création, liste, statuts) | **Livré (1.8.0)** |
 | **3** | Saisie entretien (formulaire multi-sections) | **Livré (1.8.0)** |
-| 4 | Historique sur fiche employé | À venir (Lot B) |
+| **4** | Historique salarié & échéances légales (écran dédié `professional-history`) | **Livré (1.12.0, Lot B)** |
 | 5 | Agent IA de préparation d'entretien | À venir (Lot C) |
 | **6** | Navigation + i18n + permissions transverses | **Livré (1.8.0)** |
 | **7** | Signatures manuscrites (pro + évaluations) | **Livré (1.9.0)** |
@@ -524,6 +524,7 @@ companies
 | 010 | `010_interview_signatures.sql` | Signatures (colonnes `*_signature*`) + RPC `sign_*_as_employee` |
 | 011 | `011_epp_framework_4_8_years.sql` | **Préparée, non poussée.** Correction réglementaire EPP : métadonnées (`COMMENT ON`) documentant le cadre 4 ans / 8 ans (remplace biennal / 6 ans) |
 | 012 | `012_epp_proof_and_audit.sql` | **Préparée, non poussée.** EPP preuve (Lot A, amendée post-audit) : colonnes `signed_snapshot`, `delivered_at/by`, `created_by`, `updated_by` + triggers (audit, gel du snapshot à la double signature, verrou dérivé des signatures, colonnes anti-forge, remise one-shot post-signature), backfill des entretiens déjà signés, garde anti-re-signature dans la RPC salarié |
+| 013 | `013_employee_hire_date.sql` | **Préparée, non poussée.** Colonne `employees.hire_date` (nullable) — ancre les échéances EPP 1 an / 8 ans (Lot B) |
 
 ### 14.3 Edge Functions
 

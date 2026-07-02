@@ -49,6 +49,8 @@ export interface DbEmployee {
   late_count: number;
   unjustified_absences: number;
   justified_absences: number;
+  // Lot B — nécessite la migration 013 ; absent en attendant
+  hire_date?: string | null;
   created_at: string;
   updated_at: string;
 }

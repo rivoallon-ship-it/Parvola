@@ -651,5 +651,21 @@
   "professionalReport.deliveredOn": "Remis au salarié le",
   "professionalReport.deliverAfterSignature": "La remise pourra être tracée une fois l'entretien signé.",
   "professionalReport.heldOn": "Entretien tenu le",
-  "professionalReport.footer": "Entretien professionnel — dispositif distinct de l'entretien annuel d'évaluation."
+  "professionalReport.footer": "Entretien professionnel — dispositif distinct de l'entretien annuel d'évaluation.",
+  "professionalInterview.conductedAt": "Entretien tenu le",
+  "professionalInterview.status.signed": "Signé",
+  "professionalHistory.title": "Historique des entretiens professionnels",
+  "professionalHistory.open": "Historique",
+  "professionalHistory.deadlines": "Échéances légales (cadre 4 ans / 8 ans)",
+  "professionalHistory.hireDate": "Date d'embauche",
+  "professionalHistory.hireDateMissing": "Date d'embauche non renseignée",
+  "professionalHistory.lastInterview": "Dernier entretien mené",
+  "professionalHistory.noInterviewYet": "Aucun entretien mené",
+  "professionalHistory.nextDue": "Prochain entretien (théorique)",
+  "professionalHistory.stateOfPlayDue": "État des lieux 8 ans (théorique)",
+  "professionalHistory.overdue": "Échéance dépassée",
+  "professionalHistory.none": "Aucun entretien professionnel pour ce salarié.",
+  "professionalHistory.noDate": "Date de tenue non renseignée",
+  "professionalHistory.unknownCampaign": "Campagne supprimée",
+  "employeeForm.hireDate": "Date d'embauche"
 }

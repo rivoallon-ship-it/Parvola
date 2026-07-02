@@ -45,6 +45,14 @@ export const CAMPAIGN_CONFIG = {
   defaultStatus: 'draft' as const,
 } as const;
 
+// Configuration employés
+export const EMPLOYEE_CONFIG = {
+  // Date d'embauche : nécessite la colonne hire_date (migration 013).
+  // Laisser à false tant qu'elle n'est pas appliquée sur Supabase (le champ
+  // resterait sinon en erreur à la sauvegarde), passer à true juste après.
+  hireDateEnabled: false,
+} as const;
+
 // ============================================
 // Entretien professionnel (EPP) — cadre légal
 // ============================================

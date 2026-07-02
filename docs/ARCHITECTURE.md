@@ -41,7 +41,7 @@ Parvola/
 │   │   ├── ai-proxy/       # Proxy sécurisé vers Anthropic
 │   │   ├── invite-user/    # Invitation d'utilisateurs (admin/RH)
 │   │   └── signup-company/ # Création de compte entreprise
-│   ├── migrations/         # 001 → 012
+│   ├── migrations/         # 001 → 013
 │   └── seed.sql            # Données de démo (Sushi Neko)
 ├── vercel.json             # Config Vercel (headers, rewrites)
 ├── vite.config.ts
@@ -123,7 +123,8 @@ Composant → Hook / Service (supabase-data.ts)
 | 009 | `009_fix_professional_rls_roles.sql` | Correctifs RLS des entretiens pro (rôles admin/directeur) |
 | 010 | `010_interview_signatures.sql` | Signatures (colonnes `*_signature*`) + RPC `sign_*_as_employee` |
 | 011 | `011_epp_framework_4_8_years.sql` | Correction réglementaire EPP : métadonnées `COMMENT ON` du cadre 4 ans / 8 ans (préparée, non poussée) |
-| 012 | `012_epp_proof_and_audit.sql` | EPP preuve/verrouillage/remise/audit : colonnes snapshot/remise/audit + triggers immutabilité (préparée, non poussée) |
+| 012 | `012_epp_proof_and_audit.sql` | EPP preuve/verrouillage/remise/audit : colonnes snapshot/remise/audit + triggers immutabilité, backfill, anti-forge (préparée, non poussée) |
+| 013 | `013_employee_hire_date.sql` | Colonne `employees.hire_date` — échéances EPP 1 an / 8 ans (préparée, non poussée) |
 
 ---
 

@@ -64,6 +64,7 @@ export const ProfessionalInterviewView: React.FC = () => {
         employeeComment: interview.employeeComment,
         managerComment: interview.managerComment,
         scheduledAt: interview.scheduledAt,
+        conductedAt: interview.conductedAt,
       });
       setDirty(false);
     }
@@ -101,7 +102,11 @@ export const ProfessionalInterviewView: React.FC = () => {
   const handleComplete = async () => {
     setSaving(true);
     try {
-      await updateProfessionalInterview(interview.id, { ...form, status: 'completed' });
+      // La date de tenue ancre l'échéance des 4 ans : si elle n'a pas été
+      // saisie, la complétion vaut tenue à la date du jour.
+      const conductedAt =
+        form.conductedAt || interview.conductedAt || new Date().toISOString().split('T')[0];
+      await updateProfessionalInterview(interview.id, { ...form, conductedAt, status: 'completed' });
       setDirty(false);
     } catch (err) {
       saveErrorToast(err);
@@ -174,17 +179,31 @@ export const ProfessionalInterviewView: React.FC = () => {
         </div>
 
         {!isEmployee && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <label className="block text-xs font-medium text-gray-500 mb-1">
-              {t('professionalInterview.scheduledAt')}
-            </label>
-            <input
-              type="date"
-              className="text-sm border border-gray-200 rounded px-2 py-1"
-              value={form.scheduledAt?.split('T')[0] || ''}
-              onChange={(e) => handleChange('scheduledAt', e.target.value)}
-              disabled={isReadOnly}
-            />
+          <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-6">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">
+                {t('professionalInterview.scheduledAt')}
+              </label>
+              <input
+                type="date"
+                className="text-sm border border-gray-200 rounded px-2 py-1"
+                value={form.scheduledAt?.split('T')[0] || ''}
+                onChange={(e) => handleChange('scheduledAt', e.target.value)}
+                disabled={isReadOnly}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">
+                {t('professionalInterview.conductedAt')}
+              </label>
+              <input
+                type="date"
+                className="text-sm border border-gray-200 rounded px-2 py-1"
+                value={form.conductedAt?.split('T')[0] || ''}
+                onChange={(e) => handleChange('conductedAt', e.target.value)}
+                disabled={isReadOnly}
+              />
+            </div>
           </div>
         )}
       </Card>

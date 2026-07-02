@@ -1,10 +1,11 @@
 import React from 'react';
-import { Briefcase, ChevronRight } from 'lucide-react';
+import { Briefcase, ChevronRight, CalendarClock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Card, EmptyState, CampaignStatusBadge } from '@/components/common';
 import { PageHeader } from '@/components/layout';
 import { useNavigation, useProfessionalInterviews, useEmployees, useUser } from '@/hooks';
 import { colors } from '@/constants/colors';
+import { formatDate, getNextProfessionalInterviewDueDate } from '@/utils/helpers';
 
 export const MyProfessionalInterviewsView: React.FC = () => {
   const { t } = useTranslation();
@@ -42,10 +43,30 @@ export const MyProfessionalInterviewsView: React.FC = () => {
         <Card>
           <div className="flex items-center gap-4">
             <span className="text-5xl">{employee.photo}</span>
-            <div>
+            <div className="flex-1">
               <h2 className="text-xl font-bold text-gray-800">{employee.name}</h2>
               <p className="text-gray-500">{employee.position}</p>
             </div>
+            {(() => {
+              // Prochaine échéance théorique (périodicité 4 ans, ou 1re année
+              // après l'embauche si aucun entretien mené).
+              const lastConductedAt = myInterviews
+                .map(({ interview }) => interview.conductedAt)
+                .filter((d): d is string => !!d)
+                .sort()
+                .pop();
+              const nextDue = getNextProfessionalInterviewDueDate(lastConductedAt, employee.hireDate);
+              if (!nextDue) return null;
+              return (
+                <div className="text-right">
+                  <p className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                    <CalendarClock size={14} />
+                    {t('professionalHistory.nextDue')}
+                  </p>
+                  <p className="text-sm font-semibold text-gray-800">{formatDate(nextDue)}</p>
+                </div>
+              );
+            })()}
           </div>
         </Card>
       )}
